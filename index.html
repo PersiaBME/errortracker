@@ -74,6 +74,39 @@
               <p>you can either pass a simple string message or an error object to report method. But keep it in mind that if you pass an error object you have a stackTrace property.</p>
               
             </p>
+            
+                    <h3>
+<a name="errortrackerjs" class="anchor" href="#errortrackerjs"><span class="octicon octicon-link"></span></a>
+Take a deeper look into ErrorTracker.js
+</h3>
+<p>
+To simplify development process of ErrorTracker library, we break it into separated modules as follow:
+
+<strong>ErrorTracker</strong>
+<p>it contains basic properties and behaviors of tracking errors.</p>
+
+<strong>Warehouse</strong>
+<p>it is responsible for retrieving and storing data in desired storage such localStorage, IndexedDB, or cookie.</p>
+
+<strong>BrowserDetector</strong>
+<p>a small module in order to detect what browser we are dealing with.</p>
+
+<strong>Normalizer</strong>
+<p>normalize error object so that all browsers share the same look and feel of their errors.</p>
+
+<strong>Sender</strong>
+<p>a module to communicate with server via Ajax calls in order to send error objects.</p>
+
+<p>In the development mode we are working on these modules, but whenever we want to release a new version of ErrorTracker, a grunt task runs and delete all define and require statements of ErrorTracker. In fact, our production mode just have a single file called errortracker.js that contains all other modules functionality.</p>
+</p>
+
+<h3>
+<a name="errortrackerjs" class="anchor" href="#errortrackerjs"><span class="octicon octicon-link"></span></a>
+Use grunt task to release new versions of ErrorTracker
+</h3>
+<p>
+As mentioned earlier our development and production process are two different modes. We develop ErrorTracker’s modules when we are in development mode and release it with our grunt task when we want to release a new version. In order to release new version of ErrorTracker you should install grunt in your system.
+</p>
       </section>
 
     </div>
