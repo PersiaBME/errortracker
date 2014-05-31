@@ -52,6 +52,27 @@
             besides our main application. Its primary job should be gathering application errors 
             and save them in an appropriate storage.
             </p>
+            
+            <a name="errortrackerjs" class="anchor" href="#errortrackerjs"><span class="octicon octicon-link"></span></a>How ErrorTracker.js works?</h3>
+            <p>
+              In order to use ErrorTracker.js in your application, you should first include it as follow:
+              <pre><code>
+                <script src=’path/to/errortracker.js’></script>
+              </code></pre>
+              After that, you should decide whether you want to see errors in browser console or not. If you want so, you should enable ErrorTracker debug mode like below:
+              <pre><code>errortracker.enableDebugMode();</code></pre>
+              ErrorTracker also have a method to disable debug mode. You can guess its name.
+              <pre><code>errortracker.disableDebugMode();</code></pre>
+              And finally you can report an error with the following command:
+              <pre><code>errortracker.report( reporterType, stringMessage/errrorObject );</code></pre>
+              <h5>reportType: </h5>
+              <p>you should specify a report type such as ‘log’, ‘error’, ‘warn’, or ‘info’.
+              It’s just a wrapper for different types of console methods in order to create a better interface for other developers</p>
+              
+              <strong>stringMessage/errorObject: </strong>
+              <p>you can either pass a simple string message or an error object to report method. But keep it in mind that if you pass an error object you have a stackTrace property.</p>
+              
+            </p>
       </section>
 
     </div>
