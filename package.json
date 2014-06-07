@@ -1,0 +1,13 @@
+﻿{
+  "name": "",
+  "version": "1.0.0",
+  "description": "A Javascript error handeling and reporting library",
+  "devDependencies": {
+	"grunt": "",
+	"grunt-cli": "",
+	"grunt-contrib-requirejs": "",
+	"amdclean": ""
+  },
+  "author": "Persia BME",
+  "license": "MIT"
+}
