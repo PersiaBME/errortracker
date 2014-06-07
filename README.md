@@ -68,16 +68,17 @@ Note: All of the default properties in the error report are chosen with this fac
 
 #6.	Build process
 As mentioned earlier our development and production process are two different modes. We develop ErrorTracker’s modules when we are in development mode and release it with our grunt task when we want to release a new version. In order to release new version of ErrorTracker you should install grunt in your system. Follow below steps to install it:
-1.	Install nodejs based on you operating system here: http://nodejs.org/
-2.	Then open nodejs terminal and enter following commands:
-  a.	npm install grunt
-  b.	npm install grunt-cli
-  c.	npm install bower
-3.	go to errortracker folder in your application and enter the following command:
-  a.	npm install –g amdclean
-4.	then enter the following command in order to make a new version of ErrorTracker
-  a.	grunt
-7.	ErrorTracker API
+
+	1. Install NodeJs from node website http://nodejs.org.
+	2. Then open nodejs terminal and enter following commands:
+	  a. npm install grunt
+	  b. npm install grunt-cli
+	  c. npm install bower
+	3. go to errortracker folder in your application and enter the following command:
+	 a. npm install –g amdclean
+	4. then enter the following command in order to make a new version of ErrorTracker
+	  a. grunt
+	7. ErrorTracker API
 
 <table>
     <tr>
