@@ -11,11 +11,6 @@ require([
     var namespace = 'errortracker';
 
     /**
-    * Keeps errortracker configs
-    */
-    //var config = window.errConfig || {};
-
-    /**
     * Keeps errortracker properties
     */
     var properties = {};
