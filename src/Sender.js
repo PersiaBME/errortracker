@@ -1,4 +1,4 @@
-﻿define([], function () {
+define([], function () {
 
 
     var XMLHttpFactories = [
@@ -26,9 +26,7 @@
         var req = createXMLHTTPObject();
         var method = "POST";
 	    req.open(method,url,true);
-	    if (json) {
-	        req.setRequestHeader('Content-type', 'application/json');
-	    }
+	    req.setRequestHeader('Content-type', 'application/json');
 	    req.onreadystatechange = function () {
 	        if (req.readyState != 4) {
 	            failCallback();

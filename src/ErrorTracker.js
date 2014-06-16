@@ -1,4 +1,4 @@
-﻿require([
+require([
     'Normalizer',
     'Warehouse',
     'BrowserDetector',
@@ -9,6 +9,11 @@
     * ErrorTracker namespace
     */
     var namespace = 'errortracker';
+
+    /**
+    * Keeps errortracker configs
+    */
+    //var config = window.errConfig || {};
 
     /**
     * Keeps errortracker properties
@@ -43,6 +48,15 @@
         dateTime: new Date(),
         location: window.location.href,
         agent: navigator.userAgent
+    }
+
+    /**
+    * Keeps errortracker storages
+    */
+    var storages = {
+        LOCAL_STORAGE: 'localStorage',
+        INDEXED_DB: 'indexedDb',
+        COOKIE: 'cookie'
     }
 
     /**
@@ -110,7 +124,11 @@
             error[d] = defaults[d];
         }
         for (var p in properties) {
-            error[p] = properties[p];
+            if (typeof properties[p] === 'function') {
+                error[p] = properties[p]();
+            } else {
+                error[p] = properties[p];
+            }
         }
     }
 
@@ -184,16 +202,23 @@
     function syncStorage(successCallback, failCallback) {
         var storageJSON = storageToJSON();
 
-        // call a web service via ajax in order to save error object in server db
-        Sender.send('/api/ErrorLoggerApi/Add/', storageJSON, function () {
-            clearStorage();
-            clearStack();
+        if (storageJSON) {
+            // call a web service via ajax in order to save error object in server db
+            Sender.send(window.errConfig.addToServerDbUrl, storageJSON, function () {
+                clearStorage();
+                clearStack();
+                if (typeof successCallback === 'function')
+                    successCallback();
+            }, function () {
+                if (typeof failCallback === 'function')
+                    failCallback();
+            });
+
+        } else {
             if (typeof successCallback === 'function')
                 successCallback();
-        }, function () {
-            if (typeof failCallback === 'function')
-                failCallback();
-        });
+        }
+
     }
 
     /**
@@ -205,15 +230,24 @@
         }
     }
 
+    /**
+    * Initialize errortracker
+    */
+    function initialize(c) {
+        window.errConfig = c;
+        Warehouse.initialize(window.errConfig.storage);
+    }
 
     /**
     * Our global object act as ErrorTracker
     */
     window.errortracker = {
+        initialize: initialize,
         getNamespace: getNamespace,
         enableDebugMode: enableDebugMode,
         disableDebugMode: disableDebugMode,
         report: report,
+        storages: storages,
         reporters: reporters,
         clearStack: clearStack,
         printStack: printStack,
