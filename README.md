@@ -57,14 +57,14 @@ Every report object contains a few useful default parameters such as error type,
 <pre>
   <code>
     errortracker.addProperties({
-    	userName: myCredentialModule.getCurrentUserName()
+    	userName: myCredentialModule.getCurrentUserName
     });
   </code>
 </pre>
 
 Now your report objects will contain a field called userName. 
 
-Note: All of the default properties in the error report are chosen with this fact in mind that they will be present when a report object is being made, so you have to keep this important fact in mind when defining your custom fields otherwise they will be undefined or bad things might happen.
+Note: All of the default properties in the error report are chosen with this fact in mind that they will be present when a report object is being made, so you have to keep this important fact in mind when defining your custom fields otherwise they will be undefined or bad things might happen. Also keep that in mind that the error tracker will execute every custom property if they are function. The execution will be done when ever an error accures. 
 
 #6.	Build process
 As mentioned earlier our development and production process are two different modes. We develop ErrorTracker’s modules when we are in development mode and release it with our grunt task when we want to release a new version. In order to release new version of ErrorTracker you should install grunt in your system. Follow below steps to install it:
