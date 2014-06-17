@@ -3,8 +3,99 @@
     // 5 MB is 1048576 bytes
     // each char in javascript is byte so we need 524288 byte
     var MAX_STORAGE_SIZE = 500000;
-
     var storage = {};
+
+    function initialize(userConfig) {
+        storage = extend(storage, userConfig);
+        initilizeStorageType();
+    }
+
+    function initilizeStorageType() {
+        if (!storage.type) {
+            storage.type = detectPereferdAvailableStorage();
+        }
+    };
+
+    function detectPereferdAvailableStorage() {
+        var pereferdStorageType;
+        // preffered storage
+        if ('localStorage' in window && window['localStorage'] !== null) {
+            pereferdStorageType = 'localStorage';
+        } else if (window.indexedDB || window.mozIndexedDB ||
+            window.webkitIndexedDB || window.msIndexedDB) {         // secondary storage
+            // keep IndexedDB instance
+            pereferdStorageType = 'indexedDb';
+        } else {
+            // fallback storage
+            var pereferdStorageType = 'cookie';
+        }
+
+        return pereferdStorageType;
+    }
+
+    var storageFunctionMap = {
+        save: {
+            'localStorage': saveInLocalStorage,
+            'indexedDb': saveInIndexedDb,
+            'cookie': saveInCookie
+        },
+        remove: {
+            'localStorage': removeFromLocalStorage,
+            'indexedDb': removeFromIndexedDb,
+            'cookie': removeFromCookie
+        },
+        update: {
+            'localStorage': updateInLocalStorage,
+            'indexedDb': updateInIndexedDb,
+            'cookie': updateInCookie
+        },
+        clear: {
+            'localStorage': clearLocalStorage,
+            'indexedDb': clearIndexedDb,
+            'cookie': clearCookie
+        },
+        toJSON: {
+            'localStorage': localStorageToJSON,
+            'indexedDb': indexedDbToJSON,
+            'cookie': cookieToJSON
+        },
+        getSize: {
+            'localStorage': getLocalStorageSize,
+            'indexedDb': getIndexedDbSize,
+            'cookie': getCookieSize
+        }
+    }
+
+    function save( item ) {
+        storageFunctionMap.
+                save[storage.type](item);
+    }
+
+    function remove() {
+        storageFunctionMap.
+                remove[storage.type]();
+    }
+
+    function update() {
+        storageFunctionMap.
+            update[storage.type]();
+    }
+
+    function clear() {
+        storageFunctionMap.
+            clear[storage.type]();
+    }
+
+    function toJSON() {
+        return storageFunctionMap.
+            toJSON[storage.type]();
+    }
+
+    function getSize() {
+        return storageFunctionMap.
+            getSize[storage.type]();
+    }
+
 
     // localStorage CRUD
     function saveInLocalStorage(item) {
@@ -13,193 +104,90 @@
             items = JSON.parse(localStorage.getItem(errortracker.getNamespace()));
         }
         items.push(item);
-        localStorage.setItem(errortracker.getNamespace(),  JSON.stringify(items));
+        localStorage.setItem(errortracker.getNamespace(), JSON.stringify(items));
     }
-    function removeFromLocalStorage( item ) {
+
+    function removeFromLocalStorage(item) {
         localStorage.removeItem(item);
     }
+
     function updateInLocalStorage() {
-        console.log('localStorage: update function');
+        console.log('localStorage: update, not implemented');
     }
+
     function clearLocalStorage() {
         localStorage.clear();
     }
+
     function localStorageToJSON() {
         return JSON.parse(localStorage.getItem(errortracker.getNamespace()));
     }
+
     function getLocalStorageSize() {
         return localStorage.getItem(errortracker.getNamespace()).length;
     }
 
+
     // indexedDb CRUD
     function saveInIndexedDb() {
-        console.log('IndexedDb: save function');
+        console.log('IndexedDb: save, not implemented');
     }
+
     function removeFromIndexedDb() {
-        console.log('IndexedDb: remove function');
+        console.log('IndexedDb: remove, not implemented');
     }
-    function updateFromIndexedDb() {
-        console.log('IndexedDb: update function');
+
+    function updateInIndexedDb() {
+        console.log('IndexedDb: update, not implemented');
     }
+
     function clearIndexedDb() {
-        console.log('IndexedDb: clear function');
+        console.log('IndexedDb: clear, not implemented');
     }
+
     function indexedDbToJSON() {
-        console.log('IndexedDb: toJSON function');
+        console.log('IndexedDb: toJSON, not implemented');
     }
+
     function getIndexedDbSize() {
-        console.log('IndexedDb: getSize function');
+        console.log('IndexedDb: getSize, not implemented');
     }
+
 
     // cookie CRUD
     function saveInCookie() {
-        console.log('Cookie: save function');
+        console.log('Cookie: save, not implemented');
     }
+
     function removeFromCookie() {
-        console.log('Cookie: remove function');
+        console.log('Cookie: remove, not implemented');
     }
-    function updateFromCookie() {
-        console.log('Cookie: update function');
+
+    function updateInCookie() {
+        console.log('Cookie: update, not implemented');
     }
+
     function clearCookie() {
-        console.log('Cookie: clear function');
+        console.log('Cookie: clear, not implemented');
     }
+
     function cookieToJSON() {
-        console.log('Cookie: toJSON function');
+        console.log('Cookie: toJSON, not implemented');
     }
+
     function getCookieSize() {
-        console.log('Cookie: getSize function');
+        console.log('Cookie: getSize, not implemented');
     }
 
-    (function (factory) {
-
-        // preffered storage
-        if ('localStorage' in window && window['localStorage'] !== null) {
-            storageType = 'localStorage';
-            factory(storageType);
-            return;
-        }
-
-        // secondary storage
-        if (window.indexedDB || window.mozIndexedDB ||
-            window.webkitIndexedDB || window.msIndexedDB) {
-            // keep IndexedDB instance
-            storageType = 'indexedDb';
-            factory(storageType);
-            return
-        }
-
-        // fallback storage
-        var storageType = 'cookie';
-        factory(storageType);
-
-    }(function (storageType) {
-
-        storage.save = (function () {
-            switch (storageType) {
-                case 'localStorage':
-                    return saveInLocalStorage;
-                    break;
-                case 'indexedDb':
-                    return saveInIndexedDb;
-                    break;
-                default:
-                    return saveInCookie
-                    break;
-            }
-        }());
-
-        storage.remove = (function () {
-            switch (storageType) {
-                case 'localStorage':
-                    return removeFromLocalStorage;
-                    break;
-                case 'indexedDb':
-                    return removeFromIndexedDb;
-                    break;
-                default:
-                    return removeFromCookie
-                    break;
-            }
-        }());
-
-        storage.update = (function () {
-            switch (storageType) {
-                case 'localStorage':
-                    return updateInLocalStorage;
-                    break;
-                case 'indexedDb':
-                    return updateInIndexedDb;
-                    break;
-                default:
-                    return updateInCookie;
-                    break;
-            }
-        }());
-
-        storage.clear = (function () {
-            switch (storageType) {
-                case 'localStorage':
-                    return clearLocalStorage;
-                    break;
-                case 'indexedDb':
-                    return clearIndexedDb;
-                    break;
-                default:
-                    return clearCookie;
-                    break;
-            }
-        }());
-
-        storage.toJSON = (function () {
-            switch (storageType) {
-                case 'localStorage':
-                    return localStorageToJSON;
-                    break;
-                case 'indexedDb':
-                    return indexedDbToJSON;
-                    break;
-                default:
-                    return cookieToJSON;
-                    break;
-            }
-        }());
-
-        storage.getSize = (function () {
-            switch (storageType) {
-                case 'localStorage':
-                    return getLocalStorageSize;
-                    break;
-                case 'indexedDb':
-                    return getIndexedDbSize;
-                    break;
-                default:
-                    return getCookieSize;
-                    break;
-            }
-        }());
-
-    }));
-
-
-    function save( item ) {
-        storage.save(item);
+    //util extend
+    function extend() {
+        for (var i = 1; i < arguments.length; i++)
+            for (var key in arguments[i])
+                if (arguments[i].hasOwnProperty(key))
+                    arguments[0][key] = arguments[i][key];
+        return arguments[0];
     }
-    function remove() {
-        storage.remove();
-    }
-    function update() {
-        storage.update();
-    }
-    function clear() {
-        storage.clear();
-    }
-    function toJSON() {
-        return storage.toJSON();
-    }
-    function getSize() {
-        return storage.getSize();
-    }
+
 
     return {
 
@@ -210,7 +198,8 @@
         update: update,
         clear: clear,
         toJSON: toJSON,
-        getSize: getSize
+        getSize: getSize,
+        initialize: initialize
     }
 
 });

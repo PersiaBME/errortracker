@@ -1,4 +1,4 @@
-require([
+﻿require([
     'Normalizer',
     'Warehouse',
     'BrowserDetector',
@@ -9,6 +9,11 @@ require([
     * ErrorTracker namespace
     */
     var namespace = 'errortracker';
+
+    /**
+    * Keeps errortracker configs
+    */
+    //var config = window.errConfig || {};
 
     /**
     * Keeps errortracker properties
@@ -199,7 +204,7 @@ require([
 
         if (storageJSON) {
             // call a web service via ajax in order to save error object in server db
-            Sender.send(window.errConfig.addToServerDbUrl, storageJSON, function () {
+            Sender.send(errConfig.addToServerDbUrl, storageJSON, function () {
                 clearStorage();
                 clearStack();
                 if (typeof successCallback === 'function')
@@ -229,8 +234,8 @@ require([
     * Initialize errortracker
     */
     function initialize(c) {
-        window.errConfig = c;
-        Warehouse.initialize(window.errConfig.storage);
+        errConfig = c;
+        Warehouse.initialize(c.storage);
     }
 
     /**
