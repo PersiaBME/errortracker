@@ -45,9 +45,9 @@
     * Defualt error properties
     */
     var defaults = {
-        dateTime: new Date(),
-        location: window.location.href,
-        agent: navigator.userAgent
+        DateTime: function () { return new Date() },
+        Location: window.location.href,
+        Agent: navigator.userAgent
     }
 
     /**
@@ -79,7 +79,7 @@
     function getErrorBasedOnDataType(err) {
         var error = {};
         if (typeof err === 'string') {
-            error.message = err;
+            error.Message = err;
         } else {
             error = Normalizer.normalizeError(err);
         }
@@ -121,7 +121,11 @@
     */
     function makeProperties(error) {
         for (var d in defaults) {
-            error[d] = defaults[d];
+            if (typeof defaults[d] === 'function') {
+                error[d] = defaults[d]();
+            } else {
+                error[d] = defaults[d];
+            }
         }
         for (var p in properties) {
             if (typeof properties[p] === 'function') {
@@ -149,7 +153,7 @@
     function report(reporterType, err) {
         var error = getErrorBasedOnDataType(err);
         takeSnapshot(function (snapshot) {
-            addProperties({ viewType: reporterType, snapshot: snapshot.toDataURL() });
+            addProperties({ ViewType: reporterType, Snapshot: snapshot.toDataURL() });
             makeProperties(error);
             stack.push(error);
             Warehouse.save(error);
