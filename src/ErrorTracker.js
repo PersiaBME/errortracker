@@ -39,16 +39,16 @@
         WARN: 'warn',
         FATAL: 'error',
         INFO: 'info'
-    }
+    };
 
     /**
     * Defualt error properties
     */
     var defaults = {
-        DateTime: function () { return new Date() },
+        DateTime: function () { return new Date(); },
         Location: window.location.href,
         Agent: navigator.userAgent
-    }
+    };
 
     /**
     * Keeps errortracker storages
@@ -57,21 +57,21 @@
         LOCAL_STORAGE: 'localStorage',
         INDEXED_DB: 'indexedDb',
         COOKIE: 'cookie'
-    }
+    };
 
     /**
     * Enable debug Mode
     */
     function enableDebugMode() {
         debugMode = true;
-    };
+    }
 
     /**
     * Disable debug mode
     */
     function disableDebugMode() {
         debugMode = false;
-    };
+    }
 
     /**
     * Check whether error is string or object
@@ -112,7 +112,7 @@
     function printError(reporterType, error) {
         if (debugMode) {
             var reporter = console[reporterType];
-            reporter.call(console, error)
+            reporter.call(console, error);
         }
     }
 
@@ -122,14 +122,24 @@
     function makeProperties(error) {
         for (var d in defaults) {
             if (typeof defaults[d] === 'function') {
+              try {
                 error[d] = defaults[d]();
+              } catch (e) {
+                error[d] = 'Error happened while creating this property' +
+                  e.message;
+              }
             } else {
                 error[d] = defaults[d];
             }
         }
         for (var p in properties) {
             if (typeof properties[p] === 'function') {
-                error[p] = properties[p]();
+              try {
+                error[p] = defaults[p]();
+              } catch (e) {
+                error[p] = 'Error happened while creating this property' +
+                  e.message;
+              }
             } else {
                 error[p] = properties[p];
             }
