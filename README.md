@@ -9,7 +9,7 @@ Tracking client side errors is a time consuming and also a boring task. Sometime
 #2.How ErrorTracker.js works?
 In order to use ErrorTracker.js in your application, you should first include it as follow:
 ```javascript
-    &lt;script src="path/to/errortracker.js"&gt;&lt;/script&gt;
+    <script src="path/to/errortracker.js"></script>;
 ```
 After that, you should decide whether you want to see errors in browser console or not. If you want so, you should enable ErrorTracker debug mode like below:
 ```javascript
