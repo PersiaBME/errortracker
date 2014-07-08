@@ -4,8 +4,9 @@ errortracker
 A Simple Library To Track Client Side Errors
 
 #1.Quick start
-Include errortracker.js at the very beginning of your scripts
+Include errortracker.js and htmlToConvas.js(https://github.com/niklasvh/html2canvas.git) at the very beginning of your scripts
 ```javascript
+    <script src="errortracker/dist/htmlToConvas.js"></script>
     <script src="errortracker/dist/errortracker.js"></script>
 ```
 Then initialize it and start listening for errors that bubble up:
@@ -20,9 +21,11 @@ Then initialize it and start listening for errors that bubble up:
     });
 
     //catch errors
-    window.onerror = function () {
-        errortracker.report(errortracker.reporters.FATAL, err);
-    }
+    $(document).ready(function(){
+        window.onerror = function () {
+            errortracker.report('error', arguments);
+        }
+    });
 ```
 Now the error tracker will track your clients javascript errors and store them in their localstorage, these errors will be sent to server as soon as they reach the maximum size (1000 characters).
 
