@@ -4,18 +4,12 @@
     /**
     * Get appropriate browser based on error object
     */
-    function getBrowser( err ) {
-        if ((err['arguments'] || !err.fileName) && err.stack) {
+    function getBrowser( msg, url, lineNumber, colNumber, errorObject ) {
+        if (typeof errorObject === 'object' && typeof colNumber === 'number') {
             return 'chrome';
         }
-        if (err.stack && err.sourceURL) {
-            return 'safari';
-        }
-        if (err.stack && err.number) {
-            return 'ie';
-        }
-        if (err.stack && err.fileName) {
-            return 'firefox';
+        if (typeof errorObject === 'undefined' && typeof colNumber === 'undefined') {
+            return 'FirefoxBelow31';
         }
 
         return 'chrome';

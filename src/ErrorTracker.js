@@ -76,12 +76,12 @@
     /**
     * Check whether error is string or object
     */
-    function getErrorBasedOnDataType(err) {
+    function getErrorBasedOnDataType(msg, url, lineNumber, colNumber, errorObject) {
         var error = {};
-        if (typeof err === 'string') {
-            error.Message = err;
+        if (typeof errorObject !== 'undefinde') {
+            error = Normalizer.normalizeError(msg, url, lineNumber, colNumber, errorObject);
         } else {
-            error = Normalizer.normalizeError(err);
+            error.Message = msg;
         }
         return error;
     }
@@ -160,8 +160,13 @@
     /**
     * Report errors based on reporter type
     */
-    function report(reporterType, err) {
-        var error = getErrorBasedOnDataType(err);
+    function report(reporterType, errorArgs) {
+        var error = getErrorBasedOnDataType(
+            errorArgs[0],
+            errorArgs[1],
+            errorArgs[2],
+            errorArgs[3],
+            errorArgs[4]);
         takeSnapshot(function (snapshot) {
             addProperties({ ViewType: reporterType, Snapshot: snapshot.toDataURL() });
             makeProperties(error);

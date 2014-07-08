@@ -3,18 +3,12 @@ BrowserDetector = function () {
     /**
     * Get appropriate browser based on error object
     */
-    function getBrowser(err) {
-        if ((err['arguments'] || !err.fileName) && err.stack) {
+    function getBrowser(msg, url, lineNumber, colNumber, errorObject) {
+        if (typeof errorObject === 'object' && typeof colNumber === 'number') {
             return 'chrome';
         }
-        if (err.stack && err.sourceURL) {
-            return 'safari';
-        }
-        if (err.stack && err.number) {
-            return 'ie';
-        }
-        if (err.stack && err.fileName) {
-            return 'firefox';
+        if (typeof errorObject === 'undefined' && typeof colNumber === 'undefined') {
+            return 'FirefoxBelow31';
         }
         return 'chrome';
     }
@@ -36,27 +30,34 @@ Normalizer = function (BrowserDetector) {
                     }()
                 };
             },
-            firefox: function (errorObject) {
+            FirefoxBelow31: function (errorObject) {
+                return {
+                    stackTrace: 'Firefox < 31 does not pass stack trace to error event',
+                    columnNumber: 'Firefox < 31 does not pass columnNumber to error event'
+                };
+            },
+            FirefoxAbove31: function (errorObject) {
                 return {
                     stackTrace: function () {
                         return errorObject.stack.replace(/(?:\n@:0)?\s+$/m, '').replace(/^(?:\((\S*)\))?@/gm, '{anonymous}($1)@').split('\n');
                     }(),
-                    lineNumber: errorObject.lineNumber,
-                    columnNumber: errorObject.columnNumber,
-                    fileName: errorObject.fileName
+                    columnNumber: errorObject.columnNumber
                 };
             }
         };
     /**
     * Normalize error object based on browser
     */
-    function normalizeError(errorObject) {
+    function normalizeError(msg, url, lineNumber, columnNumber, errorObject) {
         // get error mode
-        var errorMode = BrowserDetector.getBrowser(errorObject);
+        var errorMode = BrowserDetector.getBrowser(msg, url, lineNumber, columnNumber, errorObject);
         // normalize error based on browser
         var error = browsers[errorMode](errorObject);
         // add same properties to error object
-        error.message = errorObject.message;
+        error.message = msg;
+        error.fileName = url;
+        error.lineNumber = lineNumber;
+        error.columnNumber = error.columnNumber || columnNumber;
         return error;
     }
     return { normalizeError: normalizeError };
@@ -305,9 +306,11 @@ Sender = function () {
     * Defualt error properties
     */
     var defaults = {
-            dateTime: new Date(),
-            location: window.location.href,
-            agent: navigator.userAgent
+            DateTime: function () {
+                return new Date();
+            },
+            Location: window.location.href,
+            Agent: navigator.userAgent
         };
     /**
     * Keeps errortracker storages
@@ -332,12 +335,12 @@ Sender = function () {
     /**
     * Check whether error is string or object
     */
-    function getErrorBasedOnDataType(err) {
+    function getErrorBasedOnDataType(msg, url, lineNumber, colNumber, errorObject) {
         var error = {};
-        if (typeof err === 'string') {
-            error.message = err;
+        if (typeof errorObject !== 'undefinde') {
+            error = Normalizer.normalizeError(msg, url, lineNumber, colNumber, errorObject);
         } else {
-            error = Normalizer.normalizeError(err);
+            error.Message = msg;
         }
         return error;
     }
@@ -373,11 +376,23 @@ Sender = function () {
     */
     function makeProperties(error) {
         for (var d in defaults) {
-            error[d] = defaults[d];
+            if (typeof defaults[d] === 'function') {
+                try {
+                    error[d] = defaults[d]();
+                } catch (e) {
+                    error[d] = 'Error happened while creating this property' + e.message;
+                }
+            } else {
+                error[d] = defaults[d];
+            }
         }
         for (var p in properties) {
             if (typeof properties[p] === 'function') {
-                error[p] = properties[p]();
+                try {
+                    error[p] = defaults[p]();
+                } catch (e) {
+                    error[p] = 'Error happened while creating this property' + e.message;
+                }
             } else {
                 error[p] = properties[p];
             }
@@ -396,12 +411,12 @@ Sender = function () {
     /**
     * Report errors based on reporter type
     */
-    function report(reporterType, err) {
-        var error = getErrorBasedOnDataType(err);
+    function report(reporterType, errorArgs) {
+        var error = getErrorBasedOnDataType(errorArgs[0], errorArgs[1], errorArgs[2], errorArgs[3], errorArgs[4]);
         takeSnapshot(function (snapshot) {
             addProperties({
-                viewType: reporterType,
-                snapshot: snapshot.toDataURL()
+                ViewType: reporterType,
+                Snapshot: snapshot.toDataURL()
             });
             makeProperties(error);
             stack.push(error);

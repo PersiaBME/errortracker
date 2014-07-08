@@ -22,16 +22,20 @@
                 }())
             }
         },
-        firefox: function (errorObject) {
+        FirefoxBelow31: function (errorObject) {
+            return {
+                stackTrace: 'Firefox < 31 does not pass stack trace to error event',
+                columnNumber: 'Firefox < 31 does not pass columnNumber to error event'
+            }
+        },
+        FirefoxAbove31: function (errorObject) {
             return {
                 stackTrace: (function () {
                     return errorObject.stack.replace(/(?:\n@:0)?\s+$/m, '')
                         .replace(/^(?:\((\S*)\))?@/gm, '{anonymous}($1)@')
                         .split('\n');
                 }()),
-                lineNumber: errorObject.lineNumber,
-                columnNumber: errorObject.columnNumber,
-                fileName: errorObject.fileName
+                columnNumber: errorObject.columnNumber
             }
         }
     }
@@ -39,15 +43,18 @@
     /**
     * Normalize error object based on browser
     */
-    function normalizeError(errorObject) {
+    function normalizeError(msg, url, lineNumber, columnNumber, errorObject) {
         // get error mode
-        var errorMode = BrowserDetector.getBrowser(errorObject);
+        var errorMode = BrowserDetector.getBrowser(msg, url, lineNumber, columnNumber, errorObject);
 
         // normalize error based on browser
         var error = browsers[errorMode](errorObject);
 
         // add same properties to error object
-        error.message = errorObject.message;
+        error.message = msg;
+        error.fileName = url;
+        error.lineNumber = lineNumber;
+        error.columnNumber = error.columnNumber || columnNumber ;
 
         return error;
     }
