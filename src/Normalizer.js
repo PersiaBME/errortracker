@@ -10,7 +10,7 @@
     var browsers = {
         chrome: function (errorObject) {
             return {
-                stackTrace: (function () {
+                StackTrace: (function () {
                     return (errorObject.stack + '\n')
                         .replace(/^[\s\S]+?\s+at\s+/, ' at ') // remove message
                         .replace(/^\s+(at eval )?at\s+/gm, '') // remove 'at' and indentation
@@ -24,18 +24,18 @@
         },
         FirefoxBelow31: function (errorObject) {
             return {
-                stackTrace: 'Firefox < 31 does not pass stack trace to error event',
-                columnNumber: 'Firefox < 31 does not pass columnNumber to error event'
+                StackTrace: 'Firefox < 31 does not pass stack trace to error event',
+                ColumnNumber: 'Firefox < 31 does not pass columnNumber to error event'
             }
         },
         FirefoxAbove31: function (errorObject) {
             return {
-                stackTrace: (function () {
+                StackTrace: (function () {
                     return errorObject.stack.replace(/(?:\n@:0)?\s+$/m, '')
                         .replace(/^(?:\((\S*)\))?@/gm, '{anonymous}($1)@')
                         .split('\n');
                 }()),
-                columnNumber: errorObject.columnNumber
+                ColumnNumber: errorObject.columnNumber
             }
         }
     }
@@ -51,10 +51,10 @@
         var error = browsers[errorMode](errorObject);
 
         // add same properties to error object
-        error.message = msg;
-        error.fileName = url;
-        error.lineNumber = lineNumber;
-        error.columnNumber = error.columnNumber || columnNumber ;
+        error.Message = msg;
+        error.FileName = url;
+        error.LineNumber = lineNumber;
+        error.ColumnNumber = error.ColumnNumber || columnNumber ;
 
         return error;
     }
