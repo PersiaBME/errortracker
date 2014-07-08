@@ -135,7 +135,7 @@
         for (var p in properties) {
             if (typeof properties[p] === 'function') {
               try {
-                error[p] = defaults[p]();
+                error[p] = properties[p]();
               } catch (e) {
                 error[p] = 'Error happened while creating this property' +
                   e.message;
