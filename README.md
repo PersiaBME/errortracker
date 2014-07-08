@@ -15,7 +15,7 @@ Then initialize it and start listening for errors that bubble up:
     errortracker.initialize({
         storage: {
             maxSize: 1000,
-            type: 'localstorage'
+            type: 'localStorage'
         },
         addToServerDbUrl: '/api/to/add/errorReports'
     });
