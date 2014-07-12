@@ -78,7 +78,7 @@
     */
     function getErrorBasedOnDataType(msg, url, lineNumber, colNumber, errorObject) {
         var error = {};
-        if (typeof errorObject !== 'undefinde') {
+        if (typeof errorObject !== 'undefined') {
             error = Normalizer.normalizeError(msg, url, lineNumber, colNumber, errorObject);
         } else {
             error.Message = msg;
@@ -170,10 +170,10 @@
             errorObject = errorArgs[4];
         } else if (typeof errorArgs === 'string') {             //handels manual reports
             msg = errorArgs,
-            url = undefinde,
-            lineNumber = undefinde,
-            colNumber = undefinde
-            errorObject = undefinde
+            url = undefined,
+            lineNumber = undefined,
+            colNumber = undefined
+            errorObject = undefined
         }
 
         var error = getErrorBasedOnDataType(
