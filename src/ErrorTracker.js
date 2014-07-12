@@ -161,12 +161,28 @@
     * Report errors based on reporter type
     */
     function report(reporterType, errorArgs) {
+        var msg, url, lineNumber, colNumber, errorObject;
+        if (typeof errorArgs === 'object') {
+            msg = errorArgs[0];
+            url = errorArgs[1];
+            lineNumber = errorArgs[2];
+            colNumber = errorArgs[3];
+            errorObject = errorArgs[4];
+        } else if (typeof errorArgs === 'string') {             //handels manual reports
+            msg = errorArgs,
+            url = undefinde,
+            lineNumber = undefinde,
+            colNumber = undefinde
+            errorObject = undefinde
+        }
+
         var error = getErrorBasedOnDataType(
-            errorArgs[0],
-            errorArgs[1],
-            errorArgs[2],
-            errorArgs[3],
-            errorArgs[4]);
+            msg,
+            url,
+            lineNumber,
+            colNumber,
+            errorObject);
+
         takeSnapshot(function (snapshot) {
             addProperties({ ViewType: reporterType, Snapshot: snapshot.toDataURL() });
             makeProperties(error);

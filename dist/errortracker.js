@@ -25,23 +25,23 @@ Normalizer = function (BrowserDetector) {
     var browsers = {
             chrome: function (errorObject) {
                 return {
-                    stackTrace: function () {
+                    StackTrace: function () {
                         return (errorObject.stack + '\n').replace(/^[\s\S]+?\s+at\s+/, ' at ').replace(/^\s+(at eval )?at\s+/gm, '').replace(/^([^\(]+?)([\n$])/gm, '{anonymous}() ($1)$2').replace(/^Object.<anonymous>\s*\(([^\)]+)\)/gm, '{anonymous}() ($1)').replace(/^(.+) \((.+)\)$/gm, '$1@$2').split('\n').slice(0, -1);
                     }()
                 };
             },
             FirefoxBelow31: function (errorObject) {
                 return {
-                    stackTrace: 'Firefox < 31 does not pass stack trace to error event',
-                    columnNumber: 'Firefox < 31 does not pass columnNumber to error event'
+                    StackTrace: 'Firefox < 31 does not pass stack trace to error event',
+                    ColumnNumber: 'Firefox < 31 does not pass columnNumber to error event'
                 };
             },
             FirefoxAbove31: function (errorObject) {
                 return {
-                    stackTrace: function () {
+                    StackTrace: function () {
                         return errorObject.stack.replace(/(?:\n@:0)?\s+$/m, '').replace(/^(?:\((\S*)\))?@/gm, '{anonymous}($1)@').split('\n');
                     }(),
-                    columnNumber: errorObject.columnNumber
+                    ColumnNumber: errorObject.columnNumber
                 };
             }
         };
@@ -54,10 +54,10 @@ Normalizer = function (BrowserDetector) {
         // normalize error based on browser
         var error = browsers[errorMode](errorObject);
         // add same properties to error object
-        error.message = msg;
-        error.fileName = url;
-        error.lineNumber = lineNumber;
-        error.columnNumber = error.columnNumber || columnNumber;
+        error.Message = msg;
+        error.FileName = url;
+        error.LineNumber = lineNumber;
+        error.ColumnNumber = error.ColumnNumber || columnNumber;
         return error;
     }
     return { normalizeError: normalizeError };
@@ -412,7 +412,19 @@ Sender = function () {
     * Report errors based on reporter type
     */
     function report(reporterType, errorArgs) {
-        var error = getErrorBasedOnDataType(errorArgs[0], errorArgs[1], errorArgs[2], errorArgs[3], errorArgs[4]);
+        var msg, url, lineNumber, colNumber, errorObject;
+        if (typeof errorArgs === 'object') {
+            msg = errorArgs[0];
+            url = errorArgs[1];
+            lineNumber = errorArgs[2];
+            colNumber = errorArgs[3];
+            errorObject = errorArgs[4];
+        } else if (typeof errorArgs === 'string') {
+            //handels manual reports
+            msg = errorArgs, url = undefinde, lineNumber = undefinde, colNumber = undefinde;
+            errorObject = undefinde;
+        }
+        var error = getErrorBasedOnDataType(msg, url, lineNumber, colNumber, errorObject);
         takeSnapshot(function (snapshot) {
             addProperties({
                 ViewType: reporterType,
