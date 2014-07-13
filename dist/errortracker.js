@@ -1,16 +1,56 @@
 ;(function() {var BrowserDetector, Normalizer, Warehouse, Sender, ErrorTracker;
 BrowserDetector = function () {
   /**
-  * Get appropriate browser based on error object
+  *   Thanks to Aniket Kulkarni from stackoverflow.com
   */
-  function getBrowser(msg, url, lineNumber, colNumber, errorObject) {
-    if (typeof errorObject === 'object' && typeof colNumber === 'number') {
-      return 'chrome';
+  function getBrowser() {
+    var nVer = navigator.appVersion;
+    var nAgt = navigator.userAgent;
+    var browserName = navigator.appName;
+    var fullVersion = '' + parseFloat(navigator.appVersion);
+    var majorVersion = parseInt(navigator.appVersion, 10);
+    var nameOffset, verOffset, ix;
+    // In Opera, the true version is after "Opera" or after "Version"
+    if ((verOffset = nAgt.indexOf('Opera')) != -1) {
+      browserName = 'Opera';
+      fullVersion = nAgt.substring(verOffset + 6);
+      if ((verOffset = nAgt.indexOf('Version')) != -1)
+        fullVersion = nAgt.substring(verOffset + 8);
+    } else if ((verOffset = nAgt.indexOf('MSIE')) != -1) {
+      browserName = 'Microsoft Internet Explorer';
+      fullVersion = nAgt.substring(verOffset + 5);
+    } else if ((verOffset = nAgt.indexOf('Chrome')) != -1) {
+      browserName = 'Chrome';
+      fullVersion = nAgt.substring(verOffset + 7);
+    } else if ((verOffset = nAgt.indexOf('Safari')) != -1) {
+      browserName = 'Safari';
+      fullVersion = nAgt.substring(verOffset + 7);
+      if ((verOffset = nAgt.indexOf('Version')) != -1)
+        fullVersion = nAgt.substring(verOffset + 8);
+    } else if ((verOffset = nAgt.indexOf('Firefox')) != -1) {
+      browserName = 'Firefox';
+      fullVersion = nAgt.substring(verOffset + 8);
+    } else if ((nameOffset = nAgt.lastIndexOf(' ') + 1) < (verOffset = nAgt.lastIndexOf('/'))) {
+      browserName = nAgt.substring(nameOffset, verOffset);
+      fullVersion = nAgt.substring(verOffset + 1);
+      if (browserName.toLowerCase() == browserName.toUpperCase()) {
+        browserName = navigator.appName;
+      }
     }
-    if (typeof errorObject === 'undefined' && typeof colNumber === 'undefined') {
-      return 'FirefoxBelow31';
+    // trim the fullVersion string at semicolon/space if present
+    if ((ix = fullVersion.indexOf(';')) != -1)
+      fullVersion = fullVersion.substring(0, ix);
+    if ((ix = fullVersion.indexOf(' ')) != -1)
+      fullVersion = fullVersion.substring(0, ix);
+    majorVersion = parseInt('' + fullVersion, 10);
+    if (isNaN(majorVersion)) {
+      fullVersion = '' + parseFloat(navigator.appVersion);
+      majorVersion = parseInt(navigator.appVersion, 10);
     }
-    return 'chrome';
+    return {
+      name: browserName,
+      version: majorVersion
+    };
   }
   return { getBrowser: getBrowser };
 }();
@@ -23,41 +63,47 @@ Normalizer = function (BrowserDetector) {
    * url: https://github.com/stacktracejs/stacktrace.js/
    */
   var browsers = {
-      chrome: function (errorObject) {
-        return {
-          StackTrace: function () {
-            return (errorObject.stack + '\n').replace(/^[\s\S]+?\s+at\s+/, ' at ').replace(/^\s+(at eval )?at\s+/gm, '').replace(/^([^\(]+?)([\n$])/gm, '{anonymous}() ($1)$2').replace(/^Object.<anonymous>\s*\(([^\)]+)\)/gm, '{anonymous}() ($1)').replace(/^(.+) \((.+)\)$/gm, '$1@$2').split('\n').slice(0, -1);
-          }()
-        };
+      Chrome: function (stack) {
+        return (stack + '\n').replace(/^[\s\S]+?\s+at\s+/, ' at ').replace(/^\s+(at eval )?at\s+/gm, '').replace(/^([^\(]+?)([\n$])/gm, '{anonymous}() ($1)$2').replace(/^Object.<anonymous>\s*\(([^\)]+)\)/gm, '{anonymous}() ($1)').replace(/^(.+) \((.+)\)$/gm, '$1@$2').split('\n').slice(0, -1);
       },
-      FirefoxBelow31: function (errorObject) {
-        return {
-          StackTrace: 'Firefox < 31 does not pass stack trace to error event',
-          ColumnNumber: 'Firefox < 31 does not pass columnNumber to error event'
-        };
+      FirefoxBelow31: function (stack) {
+        return 'Firefox < 31 does not pass stack trace to error event';
       },
-      FirefoxAbove31: function (errorObject) {
-        return {
-          StackTrace: function () {
-            return errorObject.stack.replace(/(?:\n@:0)?\s+$/m, '').replace(/^(?:\((\S*)\))?@/gm, '{anonymous}($1)@').split('\n');
-          }(),
-          ColumnNumber: errorObject.columnNumber
-        };
+      FirefoxAbove31: function (stack) {
+        return stack.replace(/(?:\n@:0)?\s+$/m, '').replace(/^(?:\((\S*)\))?@/gm, '{anonymous}($1)@').split('\n');
       }
     };
+  function normalizeStackTrace(stackTrace) {
+    var postFix = '', browserName = BrowserDetector.getBrowser().name;
+    if (browserName === 'Firefox') {
+      postFix = BrowserDetector.getBrowser().version < 31 ? 'Below31' : 'Above31';
+    }
+    return browsers[browserName + postFix](stackTrace);
+  }
   /**
   * Normalize error object based on browser
   */
-  function normalizeError(msg, url, lineNumber, columnNumber, errorObject) {
-    // get error mode
-    var errorMode = BrowserDetector.getBrowser(msg, url, lineNumber, columnNumber, errorObject);
-    // normalize error based on browser
-    var error = browsers[errorMode](errorObject);
-    // add same properties to error object
-    error.Message = msg;
-    error.FileName = url;
-    error.LineNumber = lineNumber;
-    error.ColumnNumber = error.ColumnNumber || columnNumber;
+  function normalizeError(mixedError) {
+    var error = {};
+    //detect what type of extraInfo is passed in
+    if (typeof mixedError === 'object' && mixedError.length === 5) {
+      //probably comming form browser, or from our requirejs.onError event
+      //adding initial properties
+      error.Message = mixedError[0];
+      error.FileName = mixedError[1];
+      error.LineNumber = mixedError[2];
+      error.ColumnNumber = mixedError[3];
+      error.StackTrace = normalizeStackTrace(mixedError[4].stack);
+    } else if (typeof mixedError === 'object') {
+      //probably comming form a try catch statement and manually reported                     
+      //add initial properties
+      error.Message = mixedError.message;
+      error.StackTrace = normalizeStackTrace(mixedError.stack);
+    } else if (typeof mixedError === 'string') {
+      //handels manual reports
+      //add initial properties
+      error.Message = mixedError;
+    }
     return error;
   }
   return { normalizeError: normalizeError };
@@ -411,25 +457,11 @@ Sender = function () {
   /**
   * Report errors based on reporter type
   */
-  function report(reporterType, errorArgs) {
-    var msg, url, lineNumber, colNumber, errorObject;
-    if (typeof errorArgs === 'object' && errorArgs.length === 5) {
-      //probably comming form browser, or from our requirejs.onError event
-      msg = errorArgs[0];
-      url = errorArgs[1];
-      lineNumber = errorArgs[2];
-      colNumber = errorArgs[3];
-      errorObject = errorArgs[4];
-    } else if (typeof errorArgs === 'object') {
-      //probably comming form a try catch statement and manually reported
-      msg = errorArgs.message;
-      errorObject = errorArgs;
-    } else if (typeof errorArgs === 'string') {
-      //handels manual reports
-      msg = errorArgs, url = undefined, lineNumber = undefined, colNumber = undefined;
-      errorObject = undefined;
+  function report(reporterType, extraInfo) {
+    if (typeof reporterType !== 'string') {
+      console.warn('errortracker only accepts strings as first argument');
     }
-    var error = getErrorBasedOnDataType(msg, url, lineNumber, colNumber, errorObject);
+    error = Normalizer.normalizeError(extraInfo);
     takeSnapshot(function (snapshot) {
       addProperties({
         ViewType: reporterType,
