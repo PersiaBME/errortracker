@@ -160,31 +160,12 @@
     /**
     * Report errors based on reporter type
     */
-    function report(reporterType, errorArgs) {
-        var msg, url, lineNumber, colNumber, errorObject;
-        if (typeof errorArgs === 'object' && errorArgs.length === 5) {  //probably comming form browser, or from our requirejs.onError event
-            msg = errorArgs[0];
-            url = errorArgs[1];
-            lineNumber = errorArgs[2];
-            colNumber = errorArgs[3];
-            errorObject = errorArgs[4];
-        } else if (typeof errorArgs === 'object') {                     //probably comming form a try catch statement and manually reported
-            msg = errorArgs.message;
-            errorObject = errorArgs;
-        } else if (typeof errorArgs === 'string') {                     //handels manual reports
-            msg = errorArgs,
-            url = undefined,
-            lineNumber = undefined,
-            colNumber = undefined
-            errorObject = undefined
+    function report(reporterType, extraInfo) {
+        if (typeof reporterType !== 'string') {
+            console.warn('errortracker only accepts strings as first argument');
         }
 
-        var error = getErrorBasedOnDataType(
-            msg,
-            url,
-            lineNumber,
-            colNumber,
-            errorObject);
+        error = Normalizer.normalizeError(extraInfo);
 
         takeSnapshot(function (snapshot) {
             addProperties({ ViewType: reporterType, Snapshot: snapshot.toDataURL() });

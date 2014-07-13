@@ -8,53 +8,70 @@
    * url: https://github.com/stacktracejs/stacktrace.js/
    */
     var browsers = {
-        chrome: function (errorObject) {
-            return {
-                StackTrace: (function () {
-                    return (errorObject.stack + '\n')
-                        .replace(/^[\s\S]+?\s+at\s+/, ' at ') // remove message
-                        .replace(/^\s+(at eval )?at\s+/gm, '') // remove 'at' and indentation
-                        .replace(/^([^\(]+?)([\n$])/gm, '{anonymous}() ($1)$2')
-                        .replace(/^Object.<anonymous>\s*\(([^\)]+)\)/gm, '{anonymous}() ($1)')
-                        .replace(/^(.+) \((.+)\)$/gm, '$1@$2')
-                        .split('\n')
-                        .slice(0, -1);
-                }())
-            }
+        Chrome: function (stack) {
+            return (stack + '\n')
+                .replace(/^[\s\S]+?\s+at\s+/, ' at ') // remove message
+                .replace(/^\s+(at eval )?at\s+/gm, '') // remove 'at' and indentation
+                .replace(/^([^\(]+?)([\n$])/gm, '{anonymous}() ($1)$2')
+                .replace(/^Object.<anonymous>\s*\(([^\)]+)\)/gm, '{anonymous}() ($1)')
+                .replace(/^(.+) \((.+)\)$/gm, '$1@$2')
+                .split('\n')
+                .slice(0, -1);
         },
-        FirefoxBelow31: function (errorObject) {
-            return {
-                StackTrace: 'Firefox < 31 does not pass stack trace to error event',
-                ColumnNumber: 'Firefox < 31 does not pass columnNumber to error event'
-            }
+        FirefoxBelow31: function (stack) {
+            return 'Firefox < 31 does not pass stack trace to error event';
         },
-        FirefoxAbove31: function (errorObject) {
-            return {
-                StackTrace: (function () {
-                    return errorObject.stack.replace(/(?:\n@:0)?\s+$/m, '')
-                        .replace(/^(?:\((\S*)\))?@/gm, '{anonymous}($1)@')
-                        .split('\n');
-                }()),
-                ColumnNumber: errorObject.columnNumber
-            }
+        FirefoxAbove31: function (stack) {
+            return stack.replace(/(?:\n@:0)?\s+$/m, '')
+                .replace(/^(?:\((\S*)\))?@/gm, '{anonymous}($1)@')
+                .split('\n');
         }
+    }
+
+    function normalizeStackTrace(stackTrace) {
+        var postFix = '',
+            browserName = BrowserDetector.getBrowser().name;
+
+        if (browserName === 'Firefox') {
+            postFix = BrowserDetector.getBrowser().version < 31 ? 'Below31' : 'Above31';
+        }
+
+        return browsers[browserName + postFix](stackTrace);
     }
 
     /**
     * Normalize error object based on browser
     */
-    function normalizeError(msg, url, lineNumber, columnNumber, errorObject) {
-        // get error mode
-        var errorMode = BrowserDetector.getBrowser(msg, url, lineNumber, columnNumber, errorObject);
+    function normalizeError(mixedError) {
+        var error = {};
 
-        // normalize error based on browser
-        var error = browsers[errorMode](errorObject);
+        //detect what type of extraInfo is passed in
+        if (typeof mixedError === 'object' && mixedError.length === 5) {
+            //probably comming form window.onerror
 
-        // add same properties to error object
-        error.Message = msg;
-        error.FileName = url;
-        error.LineNumber = lineNumber;
-        error.ColumnNumber = error.ColumnNumber || columnNumber ;
+            //adding initial properties
+            error.Message = mixedError[0];
+            error.FileName = mixedError[1];
+            error.LineNumber = mixedError[2];
+            error.ColumnNumber = mixedError[3];
+            error.StackTrace = normalizeStackTrace( mixedError[4].stack );
+
+
+            //TODO make sure you handle window errors of older verions of firefox,
+            //they will arive here as arguments object but they don't have lenght of 5
+        } else if (typeof mixedError === 'object') {
+            //probably comming form a try catch statement and manually reported                     
+
+            //add initial properties
+            error.Message = mixedError.message;
+            error.StackTrace = normalizeStackTrace( mixedError.stack );
+
+        } else if (typeof mixedError === 'string') {
+            //handels manual reports
+
+            //add initial properties
+            error.Message = mixedError;
+        }
 
         return error;
     }
