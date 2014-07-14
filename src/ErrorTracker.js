@@ -11,11 +11,6 @@
     var namespace = 'errortracker';
 
     /**
-    * Keeps errortracker configs
-    */
-    //var config = window.errConfig || {};
-
-    /**
     * Keeps errortracker properties
     */
     var properties = {};
@@ -71,19 +66,6 @@
     */
     function disableDebugMode() {
         debugMode = false;
-    }
-
-    /**
-    * Check whether error is string or object
-    */
-    function getErrorBasedOnDataType(msg, url, lineNumber, colNumber, errorObject) {
-        var error = {};
-        if (typeof errorObject !== 'undefined') {
-            error = Normalizer.normalizeError(msg, url, lineNumber, colNumber, errorObject);
-        } else {
-            error.Message = msg;
-        }
-        return error;
     }
 
     /**
@@ -171,6 +153,11 @@
             addProperties({ ViewType: reporterType, Snapshot: snapshot.toDataURL() });
             makeProperties(error);
             stack.push(error);
+            
+            // if ( validate(error, validator) ) {
+
+            // }
+
             Warehouse.save(error);
             printError(reporterType, error);
             refreshStorage();
@@ -253,7 +240,7 @@
     * Initialize errortracker
     */
     function initialize(c) {
-        errConfig = c;
+        var errConfig = c;
         Warehouse.initialize(c.storage);
     }
 
@@ -274,6 +261,6 @@
         storageToJSON: storageToJSON,
         syncStorage: syncStorage,
         addProperties: addProperties
-    }
+    };
 
 });

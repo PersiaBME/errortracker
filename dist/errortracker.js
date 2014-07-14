@@ -87,7 +87,7 @@ Normalizer = function (BrowserDetector) {
     var error = {};
     //detect what type of extraInfo is passed in
     if (typeof mixedError === 'object' && mixedError.length === 5) {
-      //probably comming form browser, or from our requirejs.onError event
+      //probably comming form window.onerror
       //adding initial properties
       error.Message = mixedError[0];
       error.FileName = mixedError[1];
@@ -323,10 +323,6 @@ Sender = function () {
   */
   var namespace = 'errortracker';
   /**
-  * Keeps errortracker configs
-  */
-  //var config = window.errConfig || {};
-  /**
   * Keeps errortracker properties
   */
   var properties = {};
@@ -377,18 +373,6 @@ Sender = function () {
   */
   function disableDebugMode() {
     debugMode = false;
-  }
-  /**
-  * Check whether error is string or object
-  */
-  function getErrorBasedOnDataType(msg, url, lineNumber, colNumber, errorObject) {
-    var error = {};
-    if (typeof errorObject !== 'undefined') {
-      error = Normalizer.normalizeError(msg, url, lineNumber, colNumber, errorObject);
-    } else {
-      error.Message = msg;
-    }
-    return error;
   }
   /**
   * Check storage size
@@ -469,6 +453,8 @@ Sender = function () {
       });
       makeProperties(error);
       stack.push(error);
+      // if ( validate(error, validator) ) {
+      // }
       Warehouse.save(error);
       printError(reporterType, error);
       refreshStorage();
@@ -539,7 +525,7 @@ Sender = function () {
   * Initialize errortracker
   */
   function initialize(c) {
-    errConfig = c;
+    var errConfig = c;
     Warehouse.initialize(c.storage);
   }
   /**
