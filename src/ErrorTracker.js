@@ -211,7 +211,7 @@
 
         if (storageJSON) {
             // call a web service via ajax in order to save error object in server db
-            Sender.send(errConfig.addToServerDbUrl, storageJSON, function () {
+            Sender.send(options.addToServerDbUrl, storageJSON, function () {
                 clearStorage();
                 clearStack();
                 if (typeof successCallback === 'function')
