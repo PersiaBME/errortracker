@@ -5,24 +5,13 @@
     'Sender'
 ], function (Normalizer, Warehouse, BrowserDetector, Sender) {
 
-    /**
-    * ErrorTracker namespace
-    */
+    var options = {};
     var namespace = 'errortracker';
-
-    /**
-    * Keeps errortracker properties
-    */
+    //Keeps error properties
     var properties = {};
-
-    /**
-    * Determine whether errors should be logged to user or not
-    */
+    //Determine whether errors should be logged to user or not
     var debugMode = false;
-
-    /**
-    * Keeps all errors in a stack structure
-    */
+    //Keeps all errors in a stack structure
     var stack = [];
 
     /**
@@ -36,41 +25,29 @@
         INFO: 'info'
     };
 
-    /**
-    * Defualt error properties
-    */
+    //Defualt error properties
     var defaults = {
         DateTime: function () { return new Date(); },
         Location: window.location.href,
         Agent: navigator.userAgent
     };
 
-    /**
-    * Keeps errortracker storages
-    */
+    //Keeps errortracker storages
     var storages = {
         LOCAL_STORAGE: 'localStorage',
         INDEXED_DB: 'indexedDb',
         COOKIE: 'cookie'
     };
 
-    /**
-    * Enable debug Mode
-    */
     function enableDebugMode() {
         debugMode = true;
     }
 
-    /**
-    * Disable debug mode
-    */
     function disableDebugMode() {
         debugMode = false;
     }
 
-    /**
-    * Check storage size
-    */
+    //checks if storage is full or not
     function isGreaterThanMaxStorageSize() {
         if (Warehouse.getSize() > Warehouse.MAX_STORAGE_SIZE) {
             return true;
@@ -79,18 +56,14 @@
         }
     }
 
-    /**
-    * Refresh storage
-    */
+    //sync storage if storage is full
     function refreshStorage() {
         if (isGreaterThanMaxStorageSize()) {
             syncStorage();
         }
     }
 
-    /**
-    * Show error logs to user
-    */
+    //prints error logs in console
     function printError(reporterType, error) {
         if (debugMode) {
             var reporter = console[reporterType];
@@ -98,9 +71,7 @@
         }
     }
 
-    /**
-    * Make error object properties
-    */
+    //Make error object properties
     function makeProperties(error) {
         for (var d in defaults) {
             if (typeof defaults[d] === 'function') {
@@ -128,10 +99,8 @@
         }
     }
 
-    /**
-    * Taking snapshot of DOM
-    */
-    function takeSnapshot(callback) {
+    //Taking snapshot of DOM
+    function takeSnapshot (callback) {
         html2canvas(document.body, {
             onrendered: function (snapshot) {
                 callback(snapshot);
@@ -139,9 +108,54 @@
         });
     }
 
-    /**
-    * Report errors based on reporter type
-    */
+    function isIgnoredError (errorObject) {
+        var isIgnored = false;
+        var finalResults = false;
+        var partialResults = [];
+
+        //make sure user has configured an exclude object
+        if (typeof options.exclude !== 'object' && options.exclude.length)
+            return false;
+
+        rules = options.exclude;
+        for (property in rules) {
+            if (!rules.hasOwnProperty(property))
+                continue;
+
+            partialResults.push( validateRule (rules[property], errorObject) );
+        }
+
+        for (var i = 0; i < partialResults.length; i++) {
+            finalResults = finalResults || partialResults[i];
+        }
+
+        return finalResults;
+
+        function validateRule (validationObject, errorObject) {
+            var finalResults = validationObject._consider === 'any' ? false : true;
+            var partialResults = [];
+
+            for (property in validationObject) {
+                if (!validationObject.hasOwnProperty(property) || property.slice(0,1) === '_')
+                    continue;
+
+                var expression = new RegExp(validationObject[property]);
+                partialResults.push( expression.test(errorObject[property]) );
+                //console.log(validationObject[property], '-> ', errorObject[property]);
+            }
+            //console.log(partialResults);
+
+            for (var i = 0; i < partialResults.length; i++) {
+                if (validationObject._consider === 'any')
+                    finalResults = finalResults || partialResults[i];
+                else
+                    finalResults = finalResults && partialResults[i];
+            }
+            return finalResults;
+        }
+    }
+
+    //main function of errortracker
     function report(reporterType, extraInfo) {
         if (typeof reporterType !== 'string') {
             console.warn('errortracker only accepts strings as first argument');
@@ -153,10 +167,10 @@
             addProperties({ ViewType: reporterType, Snapshot: snapshot.toDataURL() });
             makeProperties(error);
             stack.push(error);
-            
-            // if ( validate(error, validator) ) {
 
-            // }
+            if ( isIgnoredError(error) ) {
+                return;
+            }
 
             Warehouse.save(error);
             printError(reporterType, error);
@@ -164,47 +178,34 @@
         });
     }
 
-    /**
-    * Remove all errors from stack
-    */
     function clearStack() {
         while (stack.pop() != null);
         // we can also do this: stack = [];
     }
 
-    /**
-    * Print stack as string
-    */
+    //prints out a string version of stack into console
     function printStack() {
         stack.forEach(function (error) {
             console.log(error);
         });
     }
 
-    /**
-    * Return namespace
-    */
+    //return namespace
     function getNamespace() {
         return namespace;
     }
 
-    /**
-    * Remove all errors from storage
-    */
+    //remove all errors from storage
     function clearStorage() {
         Warehouse.clear();
     }
 
-    /**
-    * Return all error objects as JSON
-    */
+    //retunrs all error objects as JSON
     function storageToJSON() {
         return Warehouse.toJSON();
     }
 
-    /**
-    * Sync errors in storage with server database
-    */
+    //sync errors in storage with server database
     function syncStorage(successCallback, failCallback) {
         var storageJSON = storageToJSON();
 
@@ -227,26 +228,19 @@
 
     }
 
-    /**
-    * Add new property to errortracker report object
-    */
+    //Add new property to errortracker report object
     function addProperties(propObj) {
         for (var prop in propObj) {
             properties[prop] = propObj[prop];
         }
     }
 
-    /**
-    * Initialize errortracker
-    */
     function initialize(c) {
-        var errConfig = c;
+        options = c;
         Warehouse.initialize(c.storage);
     }
 
-    /**
-    * Our global object act as ErrorTracker
-    */
+    //Our global object act as ErrorTracker
     window.errortracker = {
         initialize: initialize,
         getNamespace: getNamespace,
