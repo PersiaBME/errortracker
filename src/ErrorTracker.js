@@ -114,7 +114,7 @@
         var partialResults = [];
 
         //make sure user has configured an exclude object
-        if (typeof options.exclude !== 'object' && options.exclude.length)
+        if (typeof options.exclude !== 'object' || typeof options.exclude.length === 'undefinde')
             return false;
 
         rules = options.exclude;
