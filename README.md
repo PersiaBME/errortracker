@@ -6,8 +6,8 @@ A Simple Library To Track Client Side Errors
 #1.Quick start
 Include errortracker.js and htmlToConvas.js(https://github.com/niklasvh/html2canvas.git) at the very beginning of your scripts
 ```javascript
-    <script src="errortracker/dist/htmlToConvas.js"></script>
-    <script src="errortracker/dist/errortracker.js"></script>
+    <script src="errortracker/dist/htmlToConvas.js" />
+    <script src="errortracker/dist/errortracker.js" />
 ```
 Then initialize it and start listening for errors that bubble up:
 ```javascript
@@ -78,8 +78,9 @@ You can also use error tracker to report thing like a script beeing executed. Th
         doSomeCoolThing();
     }
 ```
+#7.Customizing error exclude
 
-#7.Take a deeper look into ErrorTracker.js
+#8.Take a deeper look into ErrorTracker.js
 To simplify development process of ErrorTracker library, we break it into separated modules as follow:
 ErrorTracker
 it contains basic properties and behaviors of tracking errors.
@@ -93,7 +94,7 @@ Sender
 a module to communicate with server via Ajax calls in order to send error objects.
 In the development mode we are working on these modules, but whenever we want to release a new version of ErrorTracker, a grunt task runs and delete all define and require statements of ErrorTracker. In fact, our production mode just have a single file called errortracker.js that contains all other modules functionality.
 
-#8.Build process
+#9.Build process
 As mentioned earlier our development and production process are two different modes. We develop ErrorTracker’s modules when we are in development mode and release it with our grunt task when we want to release a new version. In order to release new version of ErrorTracker you should install grunt in your system. Follow below steps to install it:
 
 	1. Install NodeJs (instructions here http://nodejs.org).
@@ -106,7 +107,7 @@ As mentioned earlier our development and production process are two different mo
 	4. then enter the following command in order to make a new version of ErrorTracker
 	  a. grunt
 
-#9.API
+#10.API
 <table>
     <tr>
         <td>MethodName</td>
