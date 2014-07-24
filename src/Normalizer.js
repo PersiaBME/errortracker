@@ -25,6 +25,11 @@
             return stack.replace(/(?:\n@:0)?\s+$/m, '')
                 .replace(/^(?:\((\S*)\))?@/gm, '{anonymous}($1)@')
                 .split('\n');
+        },
+        defaultParser: function (stack) {
+            return stack.replace(/(?:\n@:0)?\s+$/m, '')
+                .replace(/^(?:\((\S*)\))?@/gm, '{anonymous}($1)@')
+                .split('\n');
         }
     }
 
@@ -36,6 +41,9 @@
             postFix = BrowserDetector.getBrowser().version < 31 ? 'Below31' : 'Above31';
         }
 
+        var parsedStack;
+        if (typeof browsers[browserName + postFix] === 'undefined')
+            return browsers.defaultParser(stackTrace);
         return browsers[browserName + postFix](stackTrace);
     }
 
