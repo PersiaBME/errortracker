@@ -14,6 +14,12 @@ function setup() {
 }
 
 function MockWindowError (msg, fileName, lineNumber, columnNumber, errObject) {
+  msg = msg || 'default msg';
+  fileName = fileName || 'default fileName';
+  lineNumber = lineNumber || 1;
+  columnNumber = columnNumber || 1;
+  errObject = errObject || {stack: 'stack'};
+
   return [
     msg,
     fileName,
@@ -23,15 +29,12 @@ function MockWindowError (msg, fileName, lineNumber, columnNumber, errObject) {
   ];
 }
 
-function raseRandomError () {
-  try {
-    callAFunctionThatDoesntExists();
-  } catch (e) {
-    
-    errorObject = MockWindowError(e.message, e.fileName, e.lineNumber, e.columnNumber, e);
-
+function raseRandomError (err) {
+  if (typeof err === 'undefined')
+    errorObject = MockWindowError();
+  else
+    errorObject = err;
     errortracker.report('error', errorObject);
-  }
 }
 
 /*
@@ -42,6 +45,7 @@ function raseRandomError () {
  *  until the whole tests below will be removed.
  */
 setup();
+
 
 test("test framework, is ready to be used", function (assert) {
   assert.equal( 1, 1, "dummy test" );
@@ -61,21 +65,21 @@ asyncTest("storage to json retruns correct number of recorded errors", function 
 
 });
 
-asyncTest("errortracker records lineNumber properly", function (assert) {
+asyncTest("errortracker default properties are assigned correctly", function (assert) {
   errortracker.clearStorage();
-  raseRandomError();
-  raseRandomError();
-  raseRandomError();
+  var errorObj = new MockWindowError('msg', 'url', 55, 66, {stack: 'stack'});
+  raseRandomError(errorObj);
 
   setTimeout(function () {
     var errs = errortracker.storageToJSON();
-    assert.equal( errs.length, 3, "A single error is found in storage");
+    assert.equal( errs[0].Message, 'msg', "error message");
+    assert.equal( errs[0].FileName, 'url', "file name or url");
+    assert.equal( errs[0].LineNumber, 55, "line number");
+    assert.equal( errs[0].ColumnNumber, 66, "column number");
+    assert.ok( /stack/.test(errs[0].StackTrace[0]), "stack trace");
     QUnit.start();
   }, 0);
 
 });
-
-
-
 
 
