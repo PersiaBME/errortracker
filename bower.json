@@ -1,0 +1,22 @@
+{
+  "name": "errortracker",
+  "version": "1.3.2",
+  "homepage": "https://github.com/PersiaBME/errortracker",
+  "authors": [
+    "(Sina Sadrzadeh <sadrzadeh.sinaa@gmail.com>)"
+  ],
+  "dependencies": {
+    "qunit": null,
+    "html2canvas": null,
+    "jquery": null
+  },
+  "description": "A Javascript error handeling and reporting library",
+  "main": "dist/errortracker.js",
+  "keywords": [
+    "javascript",
+    "error",
+    "tracking",
+    "library"
+  ],
+  "license": "MIT"
+}

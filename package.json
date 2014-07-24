@@ -3,10 +3,10 @@
   "version": "1.3.2",
   "description": "A Javascript error handeling and reporting library",
   "devDependencies": {
-	"grunt": "",
-	"grunt-cli": "",
-	"grunt-contrib-requirejs": "",
-	"amdclean": ""
+  	"grunt": "",
+  	"grunt-cli": "",
+  	"grunt-contrib-requirejs": "",
+  	"amdclean": ""
   },
   "author": "Persia BME",
   "license": "MIT"

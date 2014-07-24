@@ -1,0 +1,6 @@
+{
+  "test_page": "tests/runner.html",
+  "src_files": [
+    "tests/errortracker_spec.js"
+  ]
+}
