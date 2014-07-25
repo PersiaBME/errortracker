@@ -29,7 +29,7 @@ function MockWindowError (msg, fileName, lineNumber, columnNumber, errObject) {
   ];
 }
 
-function raseRandomError (err) {
+function raseError (err) {
   if (typeof err === 'undefined')
     errorObject = MockWindowError();
   else
@@ -53,9 +53,9 @@ test("test framework, is ready to be used", function (assert) {
 
 asyncTest("storage to json retruns correct number of recorded errors", function (assert) {
   errortracker.clearStorage();
-  raseRandomError();
-  raseRandomError();
-  raseRandomError();
+  raseError();
+  raseError();
+  raseError();
 
   setTimeout(function () {
     var errs = errortracker.storageToJSON();
@@ -68,7 +68,7 @@ asyncTest("storage to json retruns correct number of recorded errors", function 
 asyncTest("errortracker default properties are assigned correctly", function (assert) {
   errortracker.clearStorage();
   var errorObj = new MockWindowError('msg', 'url', 55, 66, {stack: 'stack'});
-  raseRandomError(errorObj);
+  raseError(errorObj);
 
   setTimeout(function () {
     var errs = errortracker.storageToJSON();
@@ -83,3 +83,19 @@ asyncTest("errortracker default properties are assigned correctly", function (as
 });
 
 
+asyncTest("errors comming from try catch are counted and reported correctly", function (assert) {
+  errortracker.clearStorage();
+  var errorObj = {
+    message: 'error comming from try catch',
+    stack: 'stack trace'
+  }
+  raseError(errorObj);
+
+  setTimeout(function () {
+    var errs = errortracker.storageToJSON();
+    assert.ok( /error comming from try catch/.test(errs[0].Message) );
+    assert.ok( /stack trace/.test(errs[0].StackTrace[0]) );
+    QUnit.start();
+  }, 1000);
+
+})
