@@ -7,18 +7,18 @@ function setup() {
   errortracker.initialize({
       storage: {
           maxSize: 1000,
-          type: 'localStorage'
+          type: "localStorage"
       },
-      addToServerDbUrl: '/api/to/add/errorReports'
+      addToServerDbUrl: "/api/to/add/errorReports"
   });
 }
 
 function MockWindowError (msg, fileName, lineNumber, columnNumber, errObject) {
-  msg = msg || 'default msg';
-  fileName = fileName || 'default fileName';
+  msg = msg || "default msg";
+  fileName = fileName || "default fileName";
   lineNumber = lineNumber || 1;
   columnNumber = columnNumber || 1;
-  errObject = errObject || {stack: 'stack'};
+  errObject = errObject || {stack: "stack"};
 
   return [
     msg,
@@ -30,11 +30,11 @@ function MockWindowError (msg, fileName, lineNumber, columnNumber, errObject) {
 }
 
 function raseError (err) {
-  if (typeof err === 'undefined')
+  if (typeof err === "undefined")
     errorObject = MockWindowError();
   else
     errorObject = err;
-    errortracker.report('error', errorObject);
+    errortracker.report("error", errorObject);
 }
 
 /*
@@ -67,13 +67,13 @@ asyncTest("storage to json retruns correct number of recorded errors", function 
 
 asyncTest("errortracker default properties are assigned correctly", function (assert) {
   errortracker.clearStorage();
-  var errorObj = new MockWindowError('msg', 'url', 55, 66, {stack: 'stack'});
+  var errorObj = new MockWindowError("msg", "url", 55, 66, {stack: "stack"});
   raseError(errorObj);
 
   setTimeout(function () {
     var errs = errortracker.storageToJSON();
-    assert.equal( errs[0].Message, 'msg', "error message");
-    assert.equal( errs[0].FileName, 'url', "file name or url");
+    assert.equal( errs[0].Message, "msg", "error message");
+    assert.equal( errs[0].FileName, "url", "file name or url");
     assert.equal( errs[0].LineNumber, 55, "line number");
     assert.equal( errs[0].ColumnNumber, 66, "column number");
     assert.ok( /stack/.test(errs[0].StackTrace[0]), "stack trace");
@@ -86,16 +86,27 @@ asyncTest("errortracker default properties are assigned correctly", function (as
 asyncTest("errors comming from try catch are counted and reported correctly", function (assert) {
   errortracker.clearStorage();
   var errorObj = {
-    message: 'error comming from try catch',
-    stack: 'stack trace'
+    message: "error comming from try catch",
+    stack: "stack trace"
   }
   raseError(errorObj);
 
   setTimeout(function () {
     var errs = errortracker.storageToJSON();
-    assert.ok( /error comming from try catch/.test(errs[0].Message) );
-    assert.ok( /stack trace/.test(errs[0].StackTrace[0]) );
+    assert.ok(/error comming from try catch/.test(errs[0].Message));
+    assert.ok(/stack trace/.test(errs[0].StackTrace[0]));
     QUnit.start();
-  }, 1000);
+  }, 0);
 
-})
+});
+
+asyncTest("manual reports wokr correctly", function (assert) {
+  errortracker.clearStorage();
+  errortracker.report("error", "A manual report")
+
+  setTimeout(function () {
+    var errs = errortracker.storageToJSON();
+    assert.ok(/A manual report/.test(errs[0].Message))
+    QUnit.start();
+  }, 0)
+});
