@@ -78,7 +78,36 @@ You can also use error tracker to report thing like a script beeing executed. Th
         doSomeCoolThing();
     }
 ```
-#7.Customizing error exclude
+#7.Exclude errors
+Not all errors are useful to be tracked and stored. You can use exclude API to ignore unimportant errors. You should add the exclude array to your initialize method and then you can add your rules inside exclude array. A rule object properties represent your error report properties, and it's values are regular expressions that you want to test against your error reports. Error tracker loops through exclude rules before it wants to save an error report, if all of the properties inside any of the rules matches against that error report, error tracker will drop it and consider that as excluded. for example: 
+
+```javascript		
+exclude: [
+    { 
+        Message: /xhr/,
+        StackTrace: /jQuery.js/
+    },
+    {
+        FileName: /jayData.js/
+    }
+]
+```
+These rules will exclude any error that contains the word 'xhr' inside their message and also has 'jQuery.js' inside their stack trace OR any error that contains 'jayData.js' in its file name property. How ever it might be redundant to add multiple rules if you want to test different properties. In these cases you can use _consider especial property like this: 
+
+```javascript
+exclude: [
+    { 
+        _consider: 'any',
+        Message: /xhr/,
+        StackTrace: /jQuery.js/,
+        FileName: /jayData.js/,
+        LineNumber: /24/,
+        ColNumber: /10/
+    }
+]
+```
+And this will exclude if any of the expressions inside this rule matches against error report object. 
+
 
 #8.Take a deeper look into ErrorTracker.js
 To simplify development process of ErrorTracker library, we break it into separated modules as follow:
