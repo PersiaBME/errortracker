@@ -82,7 +82,6 @@ asyncTest("errortracker default properties are assigned correctly", function (as
 
 });
 
-
 asyncTest("errors comming from try catch are counted and reported correctly", function (assert) {
   errortracker.clearStorage();
   var errorObj = {
@@ -110,3 +109,27 @@ asyncTest("manual reports wokr correctly", function (assert) {
     QUnit.start();
   }, 0)
 });
+
+asyncTest("exclude functionality works as expected", function (assert) {
+  errortracker.clearStorage();
+  errortracker.initialize({
+    storage: {
+      maxSize: 1000,
+      type: 'localStorage'
+    },
+    exclude: [
+      { Message: /excluded error/ }
+    ],
+    addToServerDbUrl: '/api/to/add/errorReports'
+  });
+
+  var errorObj = new MockWindowError("this is an excluded error message", "url", 55, 66, {stack: "stack"});
+  raseError(errorObj);
+  setTimeout(function () {
+    var errs = errortracker.storageToJSON();
+    assert.ok(errs === null);
+    QUnit.start();
+  }, 0)  
+
+});
+
