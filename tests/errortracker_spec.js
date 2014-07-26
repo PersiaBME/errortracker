@@ -110,7 +110,27 @@ asyncTest("manual reports wokr correctly", function (assert) {
   }, 0)
 });
 
-asyncTest("exclude functionality works as expected", function (assert) {
+asyncTest("Multiple error reports can be handled when errors rase together", function (assert) {
+  errortracker.clearStorage();
+  errortracker.report("error", "Error 1")
+  errortracker.report("error", "Error 2")
+  errortracker.report("error", "Error 3")
+  errortracker.report("error", "Error 4")
+  errortracker.report("error", "Error 5")
+
+  setTimeout(function () {
+    var errs = errortracker.storageToJSON();
+    assert.ok(errs.length === 5);
+    assert.equal(errs[0].Message === "Error 1");
+    assert.equal(errs[1].Message === "Error 2");
+    assert.equal(errs[2].Message === "Error 3");
+    assert.equal(errs[3].Message === "Error 4");
+    assert.equal(errs[4].Message === "Error 5");
+    QUnit.start();
+  }, 0)
+});
+
+asyncTest("exclude functionality basic test", function (assert) {
   errortracker.clearStorage();
   errortracker.initialize({
     storage: {
@@ -132,4 +152,35 @@ asyncTest("exclude functionality works as expected", function (assert) {
   }, 0)  
 
 });
+
+asyncTest("And logic between rule properties are correct", function (assert) {
+  errortracker.clearStorage();
+  errortracker.initialize({
+    storage: {
+      maxSize: 1000,
+      type: 'localStorage'
+    },
+    exclude: [
+      { 
+        Message: /excluded error/,
+        FileName: /jquery/
+      }
+    ],
+    addToServerDbUrl: '/api/to/add/errorReports'
+  });
+
+  var errorObj = new MockWindowError("this is an excluded error message", "jquery", 55, 66, {stack: "stack"});
+  var errorObj = new MockWindowError("this is an excluded error message", "underscore", 55, 66, {stack: "stack"});
+
+  raseError(errorObj);
+  setTimeout(function () {
+    var errs = errortracker.storageToJSON();
+    assert.ok(errs.length === 1);
+    QUnit.start();
+  }, 0)  
+
+});
+
+
+
 
