@@ -117,7 +117,8 @@
         if (typeof options.exclude !== 'object' || typeof options.exclude.length === 'undefinde')
             return false;
 
-        rules = options.exclude;
+        var rules = options.exclude;
+        var property;
         for (property in rules) {
             if (!rules.hasOwnProperty(property))
                 continue;
