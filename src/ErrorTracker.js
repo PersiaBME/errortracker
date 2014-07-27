@@ -161,7 +161,7 @@
             console.warn('errortracker only accepts strings as first argument');
         }
 
-        error = Normalizer.normalizeError(extraInfo);
+        var error = Normalizer.normalizeError(extraInfo);
 
         takeSnapshot(function (snapshot) {
             addProperties({ ViewType: reporterType, Snapshot: snapshot.toDataURL() });
