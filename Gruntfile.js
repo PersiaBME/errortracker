@@ -12,7 +12,7 @@
           include: ['ErrorTracker'],
           globalModules: ['ErrorTracker'],
           out: 'dist/errortracker.js',
-		  optimize: 'none',
+		      optimize: 'none',
           onModuleBundleComplete: function (data) {
             var fs = require('fs'),
               amdclean = require('amdclean'),
@@ -27,12 +27,21 @@
           }
         }
       }
+    },
+
+    uglify: {
+      dist: {
+        files: {
+          'dist/errortracker.min.js': 'dist/errortracker.js'
+        }
+      }
     }
 
   });
 
   grunt.loadNpmTasks('grunt-contrib-requirejs');
+  grunt.loadNpmTasks('grunt-contrib-uglify');
 
-  grunt.registerTask('default', ['requirejs:build']);
+  grunt.registerTask('default', ['requirejs:build', 'uglify:dist']);
 
 };
