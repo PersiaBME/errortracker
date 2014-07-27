@@ -124,8 +124,6 @@ asyncTest("errortracker should not fail if a custom property failes during execu
 
 });
 
-
-
 asyncTest("errors comming from try catch are counted and reported correctly", function (assert) {
   errortracker.clearStorage();
   var errorObj = {
@@ -151,7 +149,7 @@ asyncTest("manual reports wokr correctly", function (assert) {
     var errs = errortracker.storageToJSON();
     assert.ok(/A manual report/.test(errs[0].Message))
     QUnit.start();
-  }, 0)
+  }, 0);
 });
 
 asyncTest("Multiple error reports can be handled when errors rase together", function (assert) {
@@ -171,7 +169,7 @@ asyncTest("Multiple error reports can be handled when errors rase together", fun
     assert.equal(errs[3].Message === "Error 4");
     assert.equal(errs[4].Message === "Error 5");
     QUnit.start();
-  }, 0)
+  }, 0);
 });
 
 asyncTest("exclude functionality basic test", function (assert) {
@@ -193,7 +191,7 @@ asyncTest("exclude functionality basic test", function (assert) {
     var errs = errortracker.storageToJSON();
     assert.ok(errs === null);
     QUnit.start();
-  }, 0)  
+  }, 0);
 
 });
 
@@ -221,10 +219,39 @@ asyncTest("And logic between rule properties are correct", function (assert) {
     var errs = errortracker.storageToJSON();
     assert.ok(errs.length === 1);
     QUnit.start();
-  }, 0)  
+  }, 0);
 
 });
 
+asyncTest("OR logic between rule properties are correct", function (assert) {
+  errortracker.clearStorage();
+  errortracker.initialize({
+    storage: {
+      maxSize: 1000,
+      type: 'localStorage'
+    },
+    exclude: [
+      { 
+        Message: /excluded/
+      },
+      {
+        FileName: /jquery/
+      }
+    ],
+    addToServerDbUrl: '/api/to/add/errorReports'
+  });
+
+  var errorObj = new MockWindowError("this is a  removed  error message", "jquery", 55, 66, {stack: "stack"});
+  var errorObj = new MockWindowError("this is an excluded error message", "underscore", 55, 66, {stack: "stack"});
+
+  raseError(errorObj);
+  setTimeout(function () {
+    var errs = errortracker.storageToJSON();
+    assert.ok(errs === null);
+    QUnit.start();
+  }, 0);
+
+});
 
 
 
