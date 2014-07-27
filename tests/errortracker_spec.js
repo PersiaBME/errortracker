@@ -30,11 +30,12 @@ function MockWindowError (msg, fileName, lineNumber, columnNumber, errObject) {
 }
 
 function raseError (err) {
+  var errorObject;
   if (typeof err === "undefined")
     errorObject = MockWindowError();
   else
     errorObject = err;
-    errortracker.report("error", errorObject);
+  errortracker.report("error", errorObject);
 }
 
 /*
@@ -81,6 +82,49 @@ asyncTest("errortracker default properties are assigned correctly", function (as
   }, 0);
 
 });
+
+asyncTest("errortracker custom properties are assigned correctly", function (assert) {
+  errortracker.clearStorage();
+  errortracker.addProperties({
+    functionProp: function () {
+      return 2 + 2;
+    },
+    valueProp: "Maybe a browser API call"
+  });
+
+  var errorObj = new MockWindowError("msg", "url", 55, 66, {stack: "stack"});
+  raseError(errorObj);
+
+  setTimeout(function () {
+    var errs = errortracker.storageToJSON();
+    assert.equal( errs[0].functionProp, 4, "functions must be supported");
+    assert.equal( errs[0].valueProp, "Maybe a browser API call", "simple values must be supported");
+    QUnit.start();
+  }, 0);
+
+});
+
+asyncTest("errortracker should not fail if a custom property failes during execution", function (assert) {
+  errortracker.clearStorage();
+  errortracker.addProperties({
+    badFunction: function () {
+      noneExistingFunction();
+      return 2 + 2;
+    }
+  });
+
+  var errorObj = new MockWindowError("msg", "url", 55, 66, {stack: "stack"});
+  raseError(errorObj);
+
+  setTimeout(function () {
+    var errs = errortracker.storageToJSON();
+    assert.ok(/while creating this property/.test(errs[0].badFunction));
+    QUnit.start();
+  }, 0);
+
+});
+
+
 
 asyncTest("errors comming from try catch are counted and reported correctly", function (assert) {
   errortracker.clearStorage();
