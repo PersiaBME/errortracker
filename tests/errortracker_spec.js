@@ -259,5 +259,15 @@ asyncTest("OR logic between rule properties are correct", function (assert) {
 
 });
 
+asyncTest("stack trace is array", function (assert) {
+  errortracker.clearStorage();
+  raseError();
 
+  setTimeout(function () {
+    var errs = errortracker.storageToJSON();
+    var stackTrace = errs[0].StackTrace;
+    assert.ok(stackTrace instanceof Array);
+    QUnit.start();
+  }, 0);
 
+});
