@@ -35,12 +35,23 @@
           'dist/errortracker.min.js': 'dist/errortracker.js'
         }
       }
+    },
+
+    watch: {
+      scripts: {
+        files: 'src/*.js',
+        tasks: ['requirejs:build', 'uglify:dist'],
+        options: {
+          interrupt: true,
+        },
+      }
     }
 
   });
 
   grunt.loadNpmTasks('grunt-contrib-requirejs');
   grunt.loadNpmTasks('grunt-contrib-uglify');
+  grunt.loadNpmTasks('grunt-contrib-watch');
 
   grunt.registerTask('default', ['requirejs:build', 'uglify:dist']);
 

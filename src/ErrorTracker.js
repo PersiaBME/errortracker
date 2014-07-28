@@ -174,15 +174,15 @@
 
         takeSnapshot(function (snapshot) {
             addProperties({ ViewType: reporterType, Snapshot: snapshot.toDataURL() });
-            makeProperties(error);
-            stack.push(error);
+            makeProperties(errorObject);
+            stack.push(errorObject);
 
-            if ( isIgnoredError(error) ) {
+            if ( isIgnoredError(errorObject) ) {
                 return;
             }
 
-            Warehouse.save(error);
-            printError(reporterType, error);
+            Warehouse.save(errorObject);
+            printError(reporterType, errorObject);
             refreshStorage();
         });
     }

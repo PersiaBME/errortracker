@@ -471,13 +471,13 @@ Sender = function () {
         ViewType: reporterType,
         Snapshot: snapshot.toDataURL()
       });
-      makeProperties(error);
-      stack.push(error);
-      if (isIgnoredError(error)) {
+      makeProperties(errorObject);
+      stack.push(errorObject);
+      if (isIgnoredError(errorObject)) {
         return;
       }
-      Warehouse.save(error);
-      printError(reporterType, error);
+      Warehouse.save(errorObject);
+      printError(reporterType, errorObject);
       refreshStorage();
     });
   }
