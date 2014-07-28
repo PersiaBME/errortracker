@@ -1,4 +1,4 @@
-;(function() {var BrowserDetector, Normalizer, Warehouse, Sender, ErrorTracker;
+;(function() {var BrowserDetector, Normalizer, Warehouse, Sender, whenthen, ErrorTracker;
 BrowserDetector = function () {
   /**
   *   Thanks to Aniket Kulkarni from stackoverflow.com
@@ -323,7 +323,45 @@ Sender = function () {
   }
   return { send: send };
 }();
-(function (Normalizer, Warehouse, BrowserDetector, Sender) {
+//Thanks to the author of when-then library, https://github.com/geuis/when-then
+//License: MIT License(http://opensource.org/licenses/mit-license.php)
+whenthen = function () {
+  var when = function () {
+    if (!(this instanceof when))
+      return new when(arguments);
+    //return new instance of itself
+    var self = this;
+    //cached so the syntax of code within the function is more readable
+    self.pending = Array.prototype.slice.call(arguments[0]);
+    //convert arguments passed in to array
+    self.pending_length = self.pending.length;
+    //cache length of the arguments array
+    self.results = { length: 0 };
+    //container for results of async functions
+    (function () {
+      // define pass() within this context so that the outer scope of self(this) is available when pass() is executed within the user's async functions
+      self.pass = function () {
+        //self.results.push(arguments); //push async results to cache array
+        self.results[arguments[0]] = arguments[1];
+        self.results.length++;
+        if (self.results.length === self.pending_length)
+          //if all async functions have finished, pass the results to .then(), which has been redefined to the user's completion function
+          self.then.call(self, self.results);
+      };
+    }());
+  };
+  when.prototype = {
+    then: function () {
+      this.then = arguments[0];
+      //reassign .then() to the user-defined function that is executed on completion. Also ensures that this() can only be called once per usage of when()
+      while (this.pending[0]) {
+        this.pending.shift().call(this, this.pass);
+      }
+    }
+  };
+  return { when: when };
+}();
+(function (Normalizer, Warehouse, BrowserDetector, Sender, Async) {
   function ErrorObject(error) {
     for (var err in error) {
       // TODO: don't forget to check against hasOwnProperty
@@ -390,7 +428,8 @@ Sender = function () {
     }
   }
   //Make error object properties
-  function makeProperties(error) {
+  function fillProperties(error) {
+    // 
     for (var d in defaults) {
       if (typeof defaults[d] === 'function') {
         try {
@@ -402,6 +441,7 @@ Sender = function () {
         error[d] = defaults[d];
       }
     }
+    //
     for (var p in properties) {
       if (typeof properties[p] === 'function') {
         try {
@@ -466,12 +506,22 @@ Sender = function () {
     }
     var error = Normalizer.normalizeError(extraInfo);
     var errorObject = new ErrorObject(error);
+    // addProperties
+    // when
+    // errorObject.fillProperties
+    // then
+    // stack.push(errorObject)
+    // when
+    // Warehous.save(errorObject)
+    // then
+    // printError
+    // refreshStorage
     takeSnapshot(function (snapshot) {
       addProperties({
         ViewType: reporterType,
         Snapshot: snapshot.toDataURL()
       });
-      makeProperties(errorObject);
+      fillProperties(errorObject);
       stack.push(errorObject);
       if (isIgnoredError(errorObject)) {
         return;
@@ -547,5 +597,5 @@ Sender = function () {
     syncStorage: syncStorage,
     addProperties: addProperties
   };
-}(Normalizer, Warehouse, BrowserDetector, Sender));
+}(Normalizer, Warehouse, BrowserDetector, Sender, whenthen));
 ErrorTracker = undefined;}());

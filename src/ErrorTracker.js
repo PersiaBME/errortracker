@@ -2,8 +2,9 @@
     'Normalizer',
     'Warehouse',
     'BrowserDetector',
-    'Sender'
-], function (Normalizer, Warehouse, BrowserDetector, Sender) {
+    'Sender',
+    'whenthen'
+], function (Normalizer, Warehouse, BrowserDetector, Sender, Async) {
 
     function ErrorObject (error) {
         for (var err in error) {
@@ -79,7 +80,8 @@
     }
 
     //Make error object properties
-    function makeProperties(error) {
+    function fillProperties(error) {
+        // 
         for (var d in defaults) {
             if (typeof defaults[d] === 'function') {
               try {
@@ -92,6 +94,7 @@
                 error[d] = defaults[d];
             }
         }
+        //
         for (var p in properties) {
             if (typeof properties[p] === 'function') {
               try {
@@ -172,9 +175,20 @@
         var error = Normalizer.normalizeError(extraInfo);
         var errorObject = new ErrorObject(error);
 
+        // addProperties
+        // when
+        // errorObject.fillProperties
+        // then
+        // stack.push(errorObject)
+        // when
+        // Warehous.save(errorObject)
+        // then
+        // printError
+        // refreshStorage
+
         takeSnapshot(function (snapshot) {
             addProperties({ ViewType: reporterType, Snapshot: snapshot.toDataURL() });
-            makeProperties(errorObject);
+            fillProperties(errorObject);
             stack.push(errorObject);
 
             if ( isIgnoredError(errorObject) ) {
