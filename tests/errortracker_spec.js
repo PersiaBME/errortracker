@@ -158,7 +158,7 @@ asyncTest("manual reports wokr correctly", function (assert) {
   }, 0);
 });
 
-pending("Multiple error reports can be handled when errors rase together", function (assert) {
+asyncTest("Multiple error reports can be handled when errors rase together", function (assert) {
   errortracker.clearStorage();
   errortracker.report("error", "Error 1")
   errortracker.report("error", "Error 2")
@@ -169,11 +169,12 @@ pending("Multiple error reports can be handled when errors rase together", funct
   setTimeout(function () {
     var errs = errortracker.storageToJSON();
     assert.ok(errs.length === 5);
-    assert.equal(errs[0].Message === "Error 1");
-    assert.equal(errs[1].Message === "Error 2");
-    assert.equal(errs[2].Message === "Error 3");
-    assert.equal(errs[3].Message === "Error 4");
-    assert.equal(errs[4].Message === "Error 5");
+    console.log(errs[0].Message, errs[1].Message, errs[2].Message, errs[3].Message, errs[4].Message);
+    assert.ok(errs[0].Message === "Error 1");
+    assert.ok(errs[1].Message === "Error 2");
+    assert.ok(errs[2].Message === "Error 3");
+    assert.ok(errs[3].Message === "Error 4");
+    assert.ok(errs[4].Message === "Error 5");
     QUnit.start();
   }, 0);
 });
@@ -259,7 +260,7 @@ asyncTest("OR logic between rule properties are correct", function (assert) {
 
 });
 
-asyncTest("stack trace is array", function (assert) {
+asyncTest("stack trace is an instance of array", function (assert) {
   errortracker.clearStorage();
   raseError();
 
@@ -271,3 +272,5 @@ asyncTest("stack trace is array", function (assert) {
   }, 0);
 
 });
+
+

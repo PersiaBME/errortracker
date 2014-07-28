@@ -324,6 +324,12 @@ Sender = function () {
   return { send: send };
 }();
 (function (Normalizer, Warehouse, BrowserDetector, Sender) {
+  function ErrorObject(error) {
+    for (var err in error) {
+      // TODO: don't forget to check against hasOwnProperty
+      this[err] = error[err];
+    }
+  }
   var options = {};
   var namespace = 'errortracker';
   //Keeps error properties
@@ -459,6 +465,7 @@ Sender = function () {
       console.warn('errortracker only accepts strings as first argument');
     }
     var error = Normalizer.normalizeError(extraInfo);
+    var errorObject = new ErrorObject(error);
     takeSnapshot(function (snapshot) {
       addProperties({
         ViewType: reporterType,
