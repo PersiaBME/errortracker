@@ -1,7 +1,7 @@
 errortracker
 ============
 
-A Simple Library To Track Client Side Errors
+An easy to use, yet powerful library for tracking client side errors.
 
 #1.Quick start
 Include errortracker.js and htmlToConvas.js(https://github.com/niklasvh/html2canvas.git) at the very beginning of your scripts
