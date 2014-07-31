@@ -6,6 +6,15 @@
     'whenthen'
 ], function (Normalizer, Warehouse, BrowserDetector, Sender, Async) {
 
+    //Originally by Ryan Lynch 
+    function extend(){
+        for(var i=1; i<arguments.length; i++)
+            for(var key in arguments[i])
+                if(arguments[i].hasOwnProperty(key))
+                    arguments[0][key] = arguments[i][key];
+        return arguments[0];
+    }
+
     function ErrorObject (error) {
         for (var err in error) {
             // TODO: don't forget to check against hasOwnProperty
@@ -13,10 +22,26 @@
         }
     }
 
+    function Report (error, type, callback) {
+        this.error = error;
+        this.type = type || 'error';
+        this.fieldProperties = {};
+        this.callback = callback;
+    }
+
+    Report.prototype.addProperties = addErrorProperties;
+    Report.prototype.fillProperties = fillErrorProperties;
+
     var options = {};
     var namespace = 'errortracker';
     //Keeps error properties
-    var properties = {};
+    var properties = {
+        DateTime: function () { return new Date(); },
+        Location: function () { return window.location.href; },
+        Agent: navigator.userAgent
+    };
+
+
     //Determine whether errors should be logged to user or not
     var debugMode = false;
     //Keeps all errors in a stack structure
@@ -79,6 +104,56 @@
         }
     }
 
+    function fillErrorProperties (pass) {
+        var errorProperties = properties,
+            fieldProperties = {},
+            asyncFunctions = [],
+            i;
+        var _this = this;
+
+        //categorize properties
+        for (p in errorProperties) {
+            if (!errorProperties.hasOwnProperty(p))
+                continue;
+            if (typeof errorProperties[p] === 'object' && errorProperties[p].async === true) {
+                (function (p) {
+                    asyncFunctions.push(function (pass) {
+                        try {
+                            return errorProperties[p].value(pass);    
+                        } catch (e) {
+                            return 'Error happened while creating this property' +
+                          e.message;
+                        }                    
+                    });
+                }(p));
+            }
+            else if (typeof errorProperties[p] === 'function') {
+                try {
+                    this.fieldProperties[p] = errorProperties[p]();
+                } catch (e) {
+                    this.fieldProperties[p]= 'Error happened while creating this property' +
+                      e.message;
+                }
+            } else if (typeof errorProperties[p] !== 'function')
+                this.fieldProperties[p] = errorProperties[p];
+        }
+
+        if (asyncFunctions.length === 0) {
+            extend(this.fieldProperties, this.error);
+            pass('fieldProperties', this.fieldProperties);
+            return;
+        }
+
+        Async.when.apply(null, asyncFunctions).
+        then(function (results) {
+            //remove length property
+            results.length = undefined;
+            extend(_this.fieldProperties, results, _this.error);
+            pass('fieldProperties', _this.fieldProperties);
+        });
+        return;
+    }
+
     //Make error object properties
     function fillProperties(error) {
         // 
@@ -124,7 +199,7 @@
         var partialResults = [];
 
         //make sure user has configured an exclude object
-        if (typeof options.exclude !== 'object' || typeof options.exclude.length === 'undefinde')
+        if (typeof options.exclude !== 'object' || typeof options.exclude.length === 'undefined')
             return false;
 
         var rules = options.exclude;
@@ -167,38 +242,48 @@
     }
 
     //main function of errortracker
-    function report(reporterType, extraInfo) {
+    function report(reporterType, extraInfo, callback) {
         if (typeof reporterType !== 'string') {
             console.warn('errortracker only accepts strings as first argument');
         }
 
         var error = Normalizer.normalizeError(extraInfo);
         var errorObject = new ErrorObject(error);
+        var report = new Report(error, reporterType, callback);
+        Async.when(function (pass) {
+            report.fillProperties(pass);
+        }).then (function (results) {
+            results.length = undefined;
+            var readyReport = results.fieldProperties;
+            
+            if ( isIgnoredError(readyReport) ) {
+                if (typeof report.callback === 'function')
+                    callback();
+                return;
+            }
 
-        // addProperties
-        // when
-        // errorObject.fillProperties
-        // then
-        // stack.push(errorObject)
-        // when
-        // Warehous.save(errorObject)
-        // then
-        // printError
-        // refreshStorage
+            stack.push(readyReport);
+            Warehouse.save(readyReport);
+            printError(reporterType, readyReport);
+            refreshStorage();
+            if (typeof report.callback === 'function')
+                callback();
+        });
 
+        /*
         takeSnapshot(function (snapshot) {
             addProperties({ ViewType: reporterType, Snapshot: snapshot.toDataURL() });
             fillProperties(errorObject);
-            stack.push(errorObject);
 
             if ( isIgnoredError(errorObject) ) {
                 return;
             }
 
+            stack.push(errorObject);
             Warehouse.save(errorObject);
             printError(reporterType, errorObject);
             refreshStorage();
-        });
+        });*/
     }
 
     function clearStack() {
@@ -255,6 +340,13 @@
     function addProperties(propObj) {
         for (var prop in propObj) {
             properties[prop] = propObj[prop];
+        }
+    }
+
+    //Add new properties to error object of a report
+    function addErrorProperties(propObj) {
+        for (var prop in propObj) {
+            this.properties[prop] = propObj[prop];
         }
     }
 

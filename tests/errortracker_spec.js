@@ -35,13 +35,13 @@ function MockWindowError (msg, fileName, lineNumber, columnNumber, errObject) {
   ];
 }
 
-function raseError (err) {
+function raseError (err, callback) {
   var errorObject;
   if (typeof err === "undefined")
     errorObject = MockWindowError();
   else
     errorObject = err;
-  errortracker.report("error", errorObject);
+  errortracker.report("error", errorObject, callback);
 }
 
 /*
@@ -62,22 +62,19 @@ asyncTest("storage to json retruns correct number of recorded errors", function 
   errortracker.clearStorage();
   raseError();
   raseError();
-  raseError();
-
-  setTimeout(function () {
+  raseError(undefined, function () {
     var errs = errortracker.storageToJSON();
     assert.equal( errs.length, 3, "A single error is found in storage");
     QUnit.start();
-  }, 0);
+  });
+
 
 });
 
 asyncTest("errortracker default properties are assigned correctly", function (assert) {
   errortracker.clearStorage();
   var errorObj = new MockWindowError("msg", "url", 55, 66, {stack: "stack"});
-  raseError(errorObj);
-
-  setTimeout(function () {
+  raseError(errorObj, function () {
     var errs = errortracker.storageToJSON();
     assert.equal( errs[0].Message, "msg", "error message");
     assert.equal( errs[0].FileName, "url", "file name or url");
@@ -85,11 +82,12 @@ asyncTest("errortracker default properties are assigned correctly", function (as
     assert.equal( errs[0].ColumnNumber, 66, "column number");
     assert.ok( /stack/.test(errs[0].StackTrace[0]), "stack trace");
     QUnit.start();
-  }, 0);
+  });
+
 
 });
 
-asyncTest("errortracker custom properties are assigned correctly", function (assert) {
+asyncTest("errortracker custom sync properties are assigned correctly", function (assert) {
   errortracker.clearStorage();
   errortracker.addProperties({
     functionProp: function () {
@@ -99,14 +97,44 @@ asyncTest("errortracker custom properties are assigned correctly", function (ass
   });
 
   var errorObj = new MockWindowError("msg", "url", 55, 66, {stack: "stack"});
-  raseError(errorObj);
-
-  setTimeout(function () {
+  raseError(errorObj, function () {
     var errs = errortracker.storageToJSON();
     assert.equal( errs[0].functionProp, 4, "functions must be supported");
     assert.equal( errs[0].valueProp, "Maybe a browser API call", "simple values must be supported");
     QUnit.start();
-  }, 0);
+  });
+
+});
+
+asyncTest("errortracker custom async properties are assigned correctly", function (assert) {
+  errortracker.clearStorage();
+  errortracker.addProperties({
+    asyncProp1: {
+      async: true,
+      value: function (pass) {
+        setTimeout(function () {
+          pass("asyncProp1", "ap1");
+        }, 300);
+      }
+    },
+    asyncProp2: {
+      async: true,
+      value: function (pass) {
+        setTimeout(function () {
+          pass("asyncProp2", "ap2");
+        }, 200);
+      }
+    },
+    valueProp: "Maybe a browser API call"
+  });
+
+  var errorObj = new MockWindowError("msg", "url", 55, 66, {stack: "stack"});
+  raseError(errorObj, function () {
+    var errs = errortracker.storageToJSON();
+    assert.equal( errs[0].asyncProp1, "ap1", "functions must be supported");
+    assert.equal( errs[0].asyncProp2, "ap2", "simple values must be supported");
+    QUnit.start()
+  });
 
 });
 
@@ -120,13 +148,11 @@ asyncTest("errortracker should not fail if a custom property failes during execu
   });
 
   var errorObj = new MockWindowError("msg", "url", 55, 66, {stack: "stack"});
-  raseError(errorObj);
-
-  setTimeout(function () {
+  raseError(errorObj, function () {
     var errs = errortracker.storageToJSON();
     assert.ok(/while creating this property/.test(errs[0].badFunction));
     QUnit.start();
-  }, 0);
+  });
 
 });
 
@@ -136,26 +162,24 @@ asyncTest("errors comming from try catch are counted and reported correctly", fu
     message: "error comming from try catch",
     stack: "stack trace"
   }
-  raseError(errorObj);
 
-  setTimeout(function () {
+  raseError(errorObj, function () {
     var errs = errortracker.storageToJSON();
     assert.ok(/error comming from try catch/.test(errs[0].Message));
     assert.ok(/stack trace/.test(errs[0].StackTrace[0]));
     QUnit.start();
-  }, 0);
+  });
 
 });
 
 asyncTest("manual reports wokr correctly", function (assert) {
   errortracker.clearStorage();
-  errortracker.report("error", "A manual report")
-
-  setTimeout(function () {
+  errortracker.report("error", "A manual report", function () {
     var errs = errortracker.storageToJSON();
     assert.ok(/A manual report/.test(errs[0].Message))
     QUnit.start();
-  }, 0);
+  });
+
 });
 
 asyncTest("Multiple error reports can be handled when errors rase together", function (assert) {
@@ -164,19 +188,18 @@ asyncTest("Multiple error reports can be handled when errors rase together", fun
   errortracker.report("error", "Error 2")
   errortracker.report("error", "Error 3")
   errortracker.report("error", "Error 4")
-  errortracker.report("error", "Error 5")
-
-  setTimeout(function () {
+  errortracker.report("error", "Error 5", function () {
     var errs = errortracker.storageToJSON();
     assert.ok(errs.length === 5);
-    console.log(errs[0].Message, errs[1].Message, errs[2].Message, errs[3].Message, errs[4].Message);
     assert.ok(errs[0].Message === "Error 1");
     assert.ok(errs[1].Message === "Error 2");
     assert.ok(errs[2].Message === "Error 3");
     assert.ok(errs[3].Message === "Error 4");
     assert.ok(errs[4].Message === "Error 5");
     QUnit.start();
-  }, 0);
+
+  });
+
 });
 
 asyncTest("exclude functionality basic test", function (assert) {
@@ -193,12 +216,11 @@ asyncTest("exclude functionality basic test", function (assert) {
   });
 
   var errorObj = new MockWindowError("this is an excluded error message", "url", 55, 66, {stack: "stack"});
-  raseError(errorObj);
-  setTimeout(function () {
+  raseError(errorObj, function () {
     var errs = errortracker.storageToJSON();
     assert.ok(errs === null);
     QUnit.start();
-  }, 0);
+  });
 
 });
 
@@ -221,12 +243,11 @@ asyncTest("AND logic between rule properties are correct", function (assert) {
   var errorObj = new MockWindowError("this is an excluded error message", "jquery", 55, 66, {stack: "stack"});
   var errorObj = new MockWindowError("this is an excluded error message", "underscore", 55, 66, {stack: "stack"});
 
-  raseError(errorObj);
-  setTimeout(function () {
+  raseError(errorObj, function () {
     var errs = errortracker.storageToJSON();
     assert.ok(errs.length === 1);
     QUnit.start();
-  }, 0);
+  });
 
 });
 
@@ -251,26 +272,21 @@ asyncTest("OR logic between rule properties are correct", function (assert) {
   var errorObj = new MockWindowError("this is a  removed  error message", "jquery", 55, 66, {stack: "stack"});
   var errorObj = new MockWindowError("this is an excluded error message", "underscore", 55, 66, {stack: "stack"});
 
-  raseError(errorObj);
-  setTimeout(function () {
+  raseError(errorObj, function () {
     var errs = errortracker.storageToJSON();
     assert.ok(errs === null);
     QUnit.start();
-  }, 0);
+  });
 
 });
 
 asyncTest("stack trace is an instance of array", function (assert) {
   errortracker.clearStorage();
-  raseError();
-
-  setTimeout(function () {
+  raseError(undefined, function () {
     var errs = errortracker.storageToJSON();
     var stackTrace = errs[0].StackTrace;
     assert.ok(stackTrace instanceof Array);
     QUnit.start();
-  }, 0);
+  });
 
 });
-
-
