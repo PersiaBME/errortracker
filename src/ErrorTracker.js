@@ -6,50 +6,21 @@
     'whenthen'
 ], function (Normalizer, Warehouse, BrowserDetector, Sender, Async) {
 
-    //Originally by Ryan Lynch 
-    function extend(){
-        for(var i=1; i<arguments.length; i++)
-            for(var key in arguments[i])
-                if(arguments[i].hasOwnProperty(key))
-                    arguments[0][key] = arguments[i][key];
-        return arguments[0];
-    }
-
-    function ErrorObject (error) {
-        for (var err in error) {
-            if (!error.hasOwnProperty(err))
-                continue;
-            this[err] = error[err];
-        }
-    }
-
-    function Report (error, type, callback) {
-        this.error = error;
-        this.type = type || 'error';
-        this.fieldProperties = {};
-        this.callback = callback;
-    }
-
-    Report.prototype.addProperties = addErrorProperties;
-    Report.prototype.fillProperties = fillErrorProperties;
-
     var options = {};
-    var namespace = 'errortracker';
-
-    //these propeties are added by user during configuration
-    var addedProperties = {};
-
-    //Defualt error properties
-    var defaultProperties = {
-        DateTime: function () { return new Date(); },
-        Location: function () { return window.location.href; },
-        Agent: navigator.userAgent
-    };
-
+    var namespace = 'errortracker';    
     //Determine whether errors should be logged to user or not
     var debugMode = false;
     //Keeps all errors in a stack structure
     var stack = [];
+    //these propeties are added by user during configuration
+    var addedProperties = {};
+
+    //Keeps errortracker storages
+    var storages = {
+        LOCAL_STORAGE: 'localStorage',
+        INDEXED_DB: 'indexedDb',
+        COOKIE: 'cookie'
+    };
 
     /**
     * Keep track of different kind of reporters
@@ -62,43 +33,58 @@
         INFO: 'info'
     };
 
-    //Keeps errortracker storages
-    var storages = {
-        LOCAL_STORAGE: 'localStorage',
-        INDEXED_DB: 'indexedDb',
-        COOKIE: 'cookie'
+    var defaultProperties = {
+        DateTime: function () { return new Date(); },
+        Location: function () { return window.location.href; },
+        Agent: navigator.userAgent
     };
 
-    function enableDebugMode() {
-        debugMode = true;
+    function Report (error, type, callback) {
+        this.error = error;
+        this.type = type || 'error';
+        this.fieldProperties = {};
+        this.callback = callback;
     }
 
-    function disableDebugMode() {
-        debugMode = false;
-    }
+    // Report.prototype.addProperties = addReportProperties;
+    Report.prototype.fillProperties = fillErrorProperties;
 
-    //checks if storage is full or not
-    function isGreaterThanMaxStorageSize() {
-        if (Warehouse.getSize() > Warehouse.MAX_STORAGE_SIZE) {
-            return true;
-        } else {
-            return false;
+    function ErrorObject (error) {
+        for (var err in error) {
+            if (!error.hasOwnProperty(err))
+                continue;
+            this[err] = error[err];
         }
     }
 
-    //sync storage if storage is full
-    function refreshStorage() {
-        if (isGreaterThanMaxStorageSize()) {
-            syncStorage();
+    //main function of errortracker
+    function report(reporterType, extraInfo, callback) {
+        if (typeof reporterType !== 'string') {
+            console.warn('errortracker only accepts strings as first argument');
         }
-    }
 
-    //prints error logs in console
-    function printError(reporterType, error) {
-        if (debugMode) {
-            var reporter = console[reporterType];
-            reporter.call(console, error);
-        }
+        var error = Normalizer.normalizeError(extraInfo);
+        var errorObject = new ErrorObject(error);
+        var report = new Report(error, reporterType, callback);
+        Async.when(function (pass) {
+            report.fillProperties(pass);
+        }).then (function (results) {
+            results.length = undefined;
+            var readyReport = results.fieldProperties;
+            
+            if ( isIgnoredError(readyReport) ) {
+                if (typeof report.callback === 'function')
+                    callback();
+                return;
+            }
+
+            stack.push(readyReport);
+            Warehouse.save(readyReport);
+            printError(reporterType, readyReport);
+            refreshStorage();
+            if (typeof report.callback === 'function')
+                callback();
+        });
     }
 
     function fillErrorProperties (pass) {
@@ -151,15 +137,6 @@
         return;
     }
 
-    //Taking snapshot of DOM
-    function takeSnapshot (callback) {
-        html2canvas(document.body, {
-            onrendered: function (snapshot) {
-                callback(snapshot);
-            }
-        });
-    }
-
     function isIgnoredError (errorObject) {
         var isIgnored = false;
         var finalResults = false;
@@ -208,82 +185,6 @@
         }
     }
 
-    function resetPropeties() {
-        addedProperties = {};
-    }
-
-    //main function of errortracker
-    function report(reporterType, extraInfo, callback) {
-        if (typeof reporterType !== 'string') {
-            console.warn('errortracker only accepts strings as first argument');
-        }
-
-        var error = Normalizer.normalizeError(extraInfo);
-        var errorObject = new ErrorObject(error);
-        var report = new Report(error, reporterType, callback);
-        Async.when(function (pass) {
-            report.fillProperties(pass);
-        }).then (function (results) {
-            results.length = undefined;
-            var readyReport = results.fieldProperties;
-            
-            if ( isIgnoredError(readyReport) ) {
-                if (typeof report.callback === 'function')
-                    callback();
-                return;
-            }
-
-            stack.push(readyReport);
-            Warehouse.save(readyReport);
-            printError(reporterType, readyReport);
-            refreshStorage();
-            if (typeof report.callback === 'function')
-                callback();
-        });
-
-        /*
-        takeSnapshot(function (snapshot) {
-            addProperties({ ViewType: reporterType, Snapshot: snapshot.toDataURL() });
-            fillProperties(errorObject);
-
-            if ( isIgnoredError(errorObject) ) {
-                return;
-            }
-
-            stack.push(errorObject);
-            Warehouse.save(errorObject);
-            printError(reporterType, errorObject);
-            refreshStorage();
-        });*/
-    }
-
-    function clearStack() {
-        while (stack.pop() != null);
-        // we can also do this: stack = [];
-    }
-
-    //prints out a string version of stack into console
-    function printStack() {
-        stack.forEach(function (error) {
-            console.log(error);
-        });
-    }
-
-    //return namespace
-    function getNamespace() {
-        return namespace;
-    }
-
-    //remove all errors from storage
-    function clearStorage() {
-        Warehouse.clear();
-    }
-
-    //retunrs all error objects as JSON
-    function storageToJSON() {
-        return Warehouse.toJSON();
-    }
-
     //sync errors in storage with server database
     function syncStorage(successCallback, failCallback) {
         var storageJSON = storageToJSON();
@@ -304,7 +205,27 @@
             if (typeof successCallback === 'function')
                 successCallback();
         }
+    }
 
+    function initialize(c) {
+        options = c;
+        Warehouse.initialize(c.storage);
+    }
+
+    //sync storage if storage is full
+    function refreshStorage() {
+        if (isGreaterThanMaxStorageSize()) {
+            syncStorage();
+        }
+    }
+
+    //checks if storage is full or not
+    function isGreaterThanMaxStorageSize() {
+        if (Warehouse.getSize() > Warehouse.MAX_STORAGE_SIZE) {
+            return true;
+        } else {
+            return false;
+        }
     }
 
     //Add new property to errortracker report object
@@ -315,15 +236,75 @@
     }
 
     //Add new properties to error object of a report
-    function addErrorProperties(propObj) {
-        for (var prop in propObj) {
-            this.properties[prop] = propObj[prop];
+    // function addReportProperties(propObj) {
+    //     for (var prop in propObj) {
+    //         this.properties[prop] = propObj[prop];
+    //     }
+    // }
+
+    function resetPropeties() {
+        addedProperties = {};
+    }
+
+    //prints error logs in console
+    function printError(reporterType, error) {
+        if (debugMode) {
+            var reporter = console[reporterType];
+            reporter.call(console, error);
         }
     }
 
-    function initialize(c) {
-        options = c;
-        Warehouse.initialize(c.storage);
+    //Taking snapshot of DOM
+    // function takeSnapshot (callback) {
+    //     html2canvas(document.body, {
+    //         onrendered: function (snapshot) {
+    //             callback(snapshot);
+    //         }
+    //     });
+    // }
+
+    //remove all errors from storage
+    function clearStorage() {
+        Warehouse.clear();
+    }
+
+    function clearStack() {
+        while (stack.pop() != null);
+        // we can also do this: stack = [];
+    }
+
+    //retunrs all error objects as JSON
+    function storageToJSON() {
+        return Warehouse.toJSON();
+    }
+
+    //prints out a string version of stack into console
+    function printStack() {
+        stack.forEach(function (error) {
+            console.log(error);
+        });
+    }
+    
+    //return namespace
+    function getNamespace() {
+        return namespace;
+    }
+
+    function enableDebugMode() {
+        debugMode = true;
+    }
+
+    function disableDebugMode() {
+        debugMode = false;
+    }
+
+    //Originally by Ryan Lynch 
+    function extend(){
+        for(var i=1; i<arguments.length; i++)
+            for(var key in arguments[i])
+                if(arguments[i].hasOwnProperty(key))
+                    arguments[0][key] = arguments[i][key];
+        return arguments[0];
     }
 
     //Our global object act as ErrorTracker
