@@ -80,6 +80,9 @@ asyncTest("errortracker default properties are assigned correctly", function (as
     assert.equal( errs[0].FileName, "url", "file name or url");
     assert.equal( errs[0].LineNumber, 55, "line number");
     assert.equal( errs[0].ColumnNumber, 66, "column number");
+    assert.ok( typeof errs[0].Agent !== 'undefined');
+    assert.ok( typeof errs[0].DateTime !== 'undefined');
+    assert.ok( typeof errs[0].Location !== 'undefined');
     assert.ok( /stack/.test(errs[0].StackTrace[0]), "stack trace");
     QUnit.start();
   });

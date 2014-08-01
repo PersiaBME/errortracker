@@ -34,13 +34,17 @@
 
     var options = {};
     var namespace = 'errortracker';
+
     //Keeps error properties
     var properties = {
+    };
+
+    //Defualt error properties
+    var defaultProperties = {
         DateTime: function () { return new Date(); },
         Location: function () { return window.location.href; },
         Agent: navigator.userAgent
     };
-
 
     //Determine whether errors should be logged to user or not
     var debugMode = false;
@@ -56,13 +60,6 @@
         WARN: 'warn',
         FATAL: 'error',
         INFO: 'info'
-    };
-
-    //Defualt error properties
-    var defaults = {
-        DateTime: function () { return new Date(); },
-        Location: window.location.href,
-        Agent: navigator.userAgent
     };
 
     //Keeps errortracker storages
@@ -105,7 +102,7 @@
     }
 
     function fillErrorProperties (pass) {
-        var errorProperties = properties,
+        var errorProperties = extend({}, properties, defaultProperties),
             fieldProperties = {},
             asyncFunctions = [],
             i;
@@ -152,36 +149,6 @@
             pass('fieldProperties', _this.fieldProperties);
         });
         return;
-    }
-
-    //Make error object properties
-    function fillProperties(error) {
-        // 
-        for (var d in defaults) {
-            if (typeof defaults[d] === 'function') {
-              try {
-                error[d] = defaults[d]();
-              } catch (e) {
-                error[d] = 'Error happened while creating this property' +
-                  e.message;
-              }
-            } else {
-                error[d] = defaults[d];
-            }
-        }
-        //
-        for (var p in properties) {
-            if (typeof properties[p] === 'function') {
-              try {
-                error[p] = properties[p]();
-              } catch (e) {
-                error[p] = 'Error happened while creating this property' +
-                  e.message;
-              }
-            } else {
-                error[p] = properties[p];
-            }
-        }
     }
 
     //Taking snapshot of DOM

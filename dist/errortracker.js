@@ -387,7 +387,9 @@ whenthen = function () {
   var options = {};
   var namespace = 'errortracker';
   //Keeps error properties
-  var properties = {
+  var properties = {};
+  //Defualt error properties
+  var defaultProperties = {
       DateTime: function () {
         return new Date();
       },
@@ -409,14 +411,6 @@ whenthen = function () {
       WARN: 'warn',
       FATAL: 'error',
       INFO: 'info'
-    };
-  //Defualt error properties
-  var defaults = {
-      DateTime: function () {
-        return new Date();
-      },
-      Location: window.location.href,
-      Agent: navigator.userAgent
     };
   //Keeps errortracker storages
   var storages = {
@@ -452,7 +446,7 @@ whenthen = function () {
     }
   }
   function fillErrorProperties(pass) {
-    var errorProperties = properties, fieldProperties = {}, asyncFunctions = [], i;
+    var errorProperties = extend({}, properties, defaultProperties), fieldProperties = {}, asyncFunctions = [], i;
     var _this = this;
     //categorize properties
     for (p in errorProperties) {
@@ -489,33 +483,6 @@ whenthen = function () {
       pass('fieldProperties', _this.fieldProperties);
     });
     return;
-  }
-  //Make error object properties
-  function fillProperties(error) {
-    // 
-    for (var d in defaults) {
-      if (typeof defaults[d] === 'function') {
-        try {
-          error[d] = defaults[d]();
-        } catch (e) {
-          error[d] = 'Error happened while creating this property' + e.message;
-        }
-      } else {
-        error[d] = defaults[d];
-      }
-    }
-    //
-    for (var p in properties) {
-      if (typeof properties[p] === 'function') {
-        try {
-          error[p] = properties[p]();
-        } catch (e) {
-          error[p] = 'Error happened while creating this property' + e.message;
-        }
-      } else {
-        error[p] = properties[p];
-      }
-    }
   }
   //Taking snapshot of DOM
   function takeSnapshot(callback) {
