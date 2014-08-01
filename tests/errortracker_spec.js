@@ -136,6 +136,7 @@ asyncTest("errortracker custom async properties are assigned correctly", functio
     var errs = errortracker.storageToJSON();
     assert.equal( errs[0].asyncProp1, "ap1", "functions must be supported");
     assert.equal( errs[0].asyncProp2, "ap2", "simple values must be supported");
+    errortracker.resetPropeties();
     QUnit.start()
   });
 

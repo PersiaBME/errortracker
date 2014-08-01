@@ -372,7 +372,8 @@ whenthen = function () {
   }
   function ErrorObject(error) {
     for (var err in error) {
-      // TODO: don't forget to check against hasOwnProperty
+      if (!error.hasOwnProperty(err))
+        continue;
       this[err] = error[err];
     }
   }
@@ -386,8 +387,8 @@ whenthen = function () {
   Report.prototype.fillProperties = fillErrorProperties;
   var options = {};
   var namespace = 'errortracker';
-  //Keeps error properties
-  var properties = {};
+  //these propeties are added by user during configuration
+  var addedProperties = {};
   //Defualt error properties
   var defaultProperties = {
       DateTime: function () {
@@ -446,7 +447,7 @@ whenthen = function () {
     }
   }
   function fillErrorProperties(pass) {
-    var errorProperties = extend({}, properties, defaultProperties), fieldProperties = {}, asyncFunctions = [], i;
+    var errorProperties = extend({}, addedProperties, defaultProperties), fieldProperties = {}, asyncFunctions = [], i;
     var _this = this;
     //categorize properties
     for (p in errorProperties) {
@@ -528,6 +529,9 @@ whenthen = function () {
       }
       return finalResults;
     }
+  }
+  function resetPropeties() {
+    addedProperties = {};
   }
   //main function of errortracker
   function report(reporterType, extraInfo, callback) {
@@ -611,7 +615,7 @@ whenthen = function () {
   //Add new property to errortracker report object
   function addProperties(propObj) {
     for (var prop in propObj) {
-      properties[prop] = propObj[prop];
+      addedProperties[prop] = propObj[prop];
     }
   }
   //Add new properties to error object of a report
@@ -638,7 +642,8 @@ whenthen = function () {
     clearStorage: clearStorage,
     storageToJSON: storageToJSON,
     syncStorage: syncStorage,
-    addProperties: addProperties
+    addProperties: addProperties,
+    resetPropeties: resetPropeties
   };
 }(Normalizer, Warehouse, BrowserDetector, Sender, whenthen));
 ErrorTracker = undefined;}());
