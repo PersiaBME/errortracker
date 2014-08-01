@@ -108,8 +108,24 @@ exclude: [
 ```
 And this will exclude if any of the expressions inside this rule matches against error report object. 
 
+#8.Async report fields
+From version 2.*.* you are able to add async functions as report properties. These async fields can be an ajax call to a remote server or a query on client side db or any other thing that you want to do asynchronously during recording your error reports. All you need to do is to implement your functions based on the error tracker standard pattern. The easiest way to learn how to work with this feature is to reading this example. 
+```javascript
+  errortracker.addProperties({
+    asyncProp1: {
+      async: true,
+      value: function (pass) {
+        setTimeout(function () {
+          pass("asyncProp1", "ap1");
+        }, 300);
+      }
+    }
+  });
+```
+Async report fields must be objects only, with a parameter ```async: true```. This way the error tracker realise that you are about to attach an async field to your reports. Next you need to define the value field. It must be a function that accepts an argument called pass ```value: function (pass)```. The pass argument would be passed to your function by error tracker when an error is being recorded, all you need to do is to figure out when your function results would be available, and call pass with 2 other arguments. The first argument is the name of your async property and the second argument would be the value of it.
 
-#8.Take a deeper look into ErrorTracker.js
+
+#9.Take a deeper look into ErrorTracker.js
 To simplify development process of ErrorTracker library, we break it into separated modules as follow:
 ErrorTracker
 it contains basic properties and behaviors of tracking errors.
@@ -123,7 +139,7 @@ Sender
 a module to communicate with server via Ajax calls in order to send error objects.
 In the development mode we are working on these modules, but whenever we want to release a new version of ErrorTracker, a grunt task runs and delete all define and require statements of ErrorTracker. In fact, our production mode just have a single file called errortracker.js that contains all other modules functionality.
 
-#9.Build process
+#10.Build process
 As mentioned earlier our development and production process are two different modes. We develop ErrorTracker’s modules when we are in development mode and release it with our grunt task when we want to release a new version. In order to release new version of ErrorTracker you should install grunt in your system. Follow below steps to install it:
 
 	1. Install NodeJs (instructions here http://nodejs.org).
@@ -136,7 +152,7 @@ As mentioned earlier our development and production process are two different mo
 	4. then enter the following command in order to make a new version of ErrorTracker
 	  a. grunt
 
-#10.API
+#11.API
 <table>
     <tr>
         <td>MethodName</td>
