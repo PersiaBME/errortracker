@@ -178,4 +178,8 @@ As mentioned earlier our development and production process are two different mo
         <td>syncStorage</td>
         <td>sync errors in storage with server database</td>
     </tr>
+    <tr>
+        <td>resetPropeties</td>
+        <td>resets report properties to the defaults</td>
+    </tr>
 </table>
