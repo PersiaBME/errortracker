@@ -91,7 +91,7 @@
         var errorProperties = extend({}, addedProperties, defaultProperties),
             fieldProperties = {},
             asyncFunctions = [],
-            i;
+            i, p;
         var _this = this;
 
         //categorize properties

@@ -437,7 +437,7 @@ whenthen = function () {
     });
   }
   function fillErrorProperties(pass) {
-    var errorProperties = extend({}, addedProperties, defaultProperties), fieldProperties = {}, asyncFunctions = [], i;
+    var errorProperties = extend({}, addedProperties, defaultProperties), fieldProperties = {}, asyncFunctions = [], i, p;
     var _this = this;
     //categorize properties
     for (p in errorProperties) {
