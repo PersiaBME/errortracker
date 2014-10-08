@@ -19,6 +19,11 @@ function setup() {
   });
 }
 
+function resetToDefaults() {
+  errortracker.clearStorage();
+  setup();
+}
+
 function MockWindowError (msg, fileName, lineNumber, columnNumber, errObject) {
   msg = msg || "default msg";
   fileName = fileName || "default fileName";
