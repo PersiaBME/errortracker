@@ -462,6 +462,7 @@ whenthen = function () {
       } else if (typeof errorProperties[p] !== 'function')
         this.fieldProperties[p] = errorProperties[p];
     }
+    this.fieldProperties.ViewType = this.type;
     if (asyncFunctions.length === 0) {
       extend(this.fieldProperties, this.error);
       pass('fieldProperties', this.fieldProperties);
