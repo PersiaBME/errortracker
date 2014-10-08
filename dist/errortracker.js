@@ -127,6 +127,7 @@ Warehouse = function () {
     if (!storage.type) {
       storage.type = detectPereferdAvailableStorage();
     }
+    MAX_STORAGE_SIZE = storage.maxSize || MAX_STORAGE_SIZE;
   }
   function detectPereferdAvailableStorage() {
     var pereferdStorageType;
@@ -264,7 +265,9 @@ Warehouse = function () {
     return arguments[0];
   }
   return {
-    MAX_STORAGE_SIZE: MAX_STORAGE_SIZE,
+    MAX_STORAGE_SIZE: function () {
+      return MAX_STORAGE_SIZE;
+    },
     save: save,
     remove: remove,
     update: update,
@@ -544,7 +547,7 @@ whenthen = function () {
   }
   //checks if storage is full or not
   function isGreaterThanMaxStorageSize() {
-    if (Warehouse.getSize() > Warehouse.MAX_STORAGE_SIZE) {
+    if (Warehouse.getSize() > Warehouse.MAX_STORAGE_SIZE()) {
       return true;
     } else {
       return false;

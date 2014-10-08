@@ -14,6 +14,7 @@
         if (!storage.type) {
             storage.type = detectPereferdAvailableStorage();
         }
+        MAX_STORAGE_SIZE = storage.maxSize || MAX_STORAGE_SIZE;
     };
 
     function detectPereferdAvailableStorage() {
@@ -190,9 +191,7 @@
 
 
     return {
-
-        MAX_STORAGE_SIZE: MAX_STORAGE_SIZE,
-
+        MAX_STORAGE_SIZE: function () { return MAX_STORAGE_SIZE; },
         save: save,
         remove: remove,
         update: update,

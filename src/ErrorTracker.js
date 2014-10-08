@@ -223,7 +223,7 @@
 
     //checks if storage is full or not
     function isGreaterThanMaxStorageSize() {
-        if (Warehouse.getSize() > Warehouse.MAX_STORAGE_SIZE) {
+        if (Warehouse.getSize() > Warehouse.MAX_STORAGE_SIZE()) {
             return true;
         } else {
             return false;
