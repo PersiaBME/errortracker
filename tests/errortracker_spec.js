@@ -78,21 +78,40 @@ asyncTest("storage to json retruns correct number of recorded errors", function 
 
 asyncTest("errortracker default properties are assigned correctly", function (assert) {
   errortracker.clearStorage();
-  var errorObj = new MockWindowError("msg", "url", 55, 66, {stack: "stack"});
-  raseError(errorObj, function () {
-    var errs = errortracker.storageToJSON();
-    assert.equal( errs[0].Message, "msg", "error message");
-    assert.equal( errs[0].FileName, "url", "file name or url");
-    assert.equal( errs[0].LineNumber, 55, "line number");
-    assert.equal( errs[0].ColumnNumber, 66, "column number");
-    assert.ok( typeof errs[0].ViewType !== 'undefined');
-    assert.ok( typeof errs[0].Agent !== 'undefined');
-    assert.ok( typeof errs[0].DateTime !== 'undefined');
-    assert.ok( typeof errs[0].Location !== 'undefined');
-    assert.ok( /stack/.test(errs[0].StackTrace[0]), "stack trace");
+  var windowErrorObj = new MockWindowError("msg", "url", 55, 66, {stack: "stack"}),
+      tryCatchError = new Error("msg");
+
+  errortracker.report(errortracker.reporters.FATAL, 'msg');
+  var err = errortracker.storageToJSON()[0];
+  assert.equal( err.Message, "msg", "errmessage");
+  assert.ok( typeof err.ViewType !== "undefined", "view type");
+  assert.ok( typeof err.Agent !== "undefined", "agent");
+  assert.ok( typeof err.DateTime !== "undefined", "date time");
+  assert.ok( typeof err.Location !== "undefined", "location href");
+
+  raseError(tryCatchError, function () {
+    var err = errortracker.storageToJSON()[1];
+    assert.equal( err.Message, "msg", "errmessage");
+    assert.ok( typeof err.ViewType !== "undefined", "view type");
+    assert.ok( typeof err.Agent !== "undefined", "agent");
+    assert.ok( typeof err.DateTime !== "undefined", "date time");
+    assert.ok( typeof err.Location !== "undefined", "location href");
+    assert.ok( /stack|anonymous/.test(err.StackTrace[0]), "stack trace");
     QUnit.start();
   });
-
+  
+  raseError(windowErrorObj, function () {
+    var err = errortracker.storageToJSON()[2];
+    assert.equal( err.Message, "msg", "errmessage");
+    assert.equal( err.FileName, "url", "file name or url");
+    assert.equal( err.LineNumber, 55, "line number");
+    assert.equal( err.ColumnNumber, 66, "column number");
+    assert.ok( typeof err.ViewType !== "undefined", "view type");
+    assert.ok( typeof err.Agent !== "undefined", "agent");
+    assert.ok( typeof err.DateTime !== "undefined", "date time");
+    assert.ok( typeof err.Location !== "undefined", "location href");
+    assert.ok( /stack/.test(err.StackTrace[0]), "stack trace");
+  });
 
 });
 
