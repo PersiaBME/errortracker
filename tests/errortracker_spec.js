@@ -73,8 +73,27 @@ asyncTest("storage to json retruns correct number of recorded errors", function 
     QUnit.start();
   });
 
+});
+
+asyncTest("error tracker clear storage when storage size hits the limit", function (assert) {
+  errortracker.clearStorage();
+  errortracker.initialize({
+    storage: {
+      maxSize: 1,
+      type: 'localStorage'
+    },
+    addToServerDbUrl: '/api/to/add/errorReports'
+  });
+
+  var errorObj = new MockWindowError();
+  raseError(errorObj, function () {
+    assert.equal(errortracker.storageToJSON(), null, 'errors must be cleaned from storage');
+    resetToDefaults();
+    QUnit.start();
+  });
 
 });
+
 
 asyncTest("errortracker default properties are assigned correctly", function (assert) {
   errortracker.clearStorage();
@@ -269,10 +288,11 @@ asyncTest("AND logic between rule properties are correct", function (assert) {
     addToServerDbUrl: '/api/to/add/errorReports'
   });
 
-  var errorObj = new MockWindowError("this is an excluded error message", "jquery", 55, 66, {stack: "stack"});
-  var errorObj = new MockWindowError("this is an excluded error message", "underscore", 55, 66, {stack: "stack"});
+  var errorObj1 = new MockWindowError("this is an excluded error message", "jquery", 55, 66, {stack: "stack"});
+  var errorObj2 = new MockWindowError("this is an excluded error message", "underscore", 55, 66, {stack: "stack"});
 
-  raseError(errorObj, function () {
+  raseError(errorObj1);
+  raseError(errorObj2, function () {
     var errs = errortracker.storageToJSON();
     assert.ok(errs.length === 1);
     QUnit.start();
@@ -298,10 +318,11 @@ asyncTest("OR logic between rule properties are correct", function (assert) {
     addToServerDbUrl: '/api/to/add/errorReports'
   });
 
-  var errorObj = new MockWindowError("this is a  removed  error message", "jquery", 55, 66, {stack: "stack"});
-  var errorObj = new MockWindowError("this is an excluded error message", "underscore", 55, 66, {stack: "stack"});
+  var errorObj1 = new MockWindowError("this is a  removed  error message", "jquery", 55, 66, {stack: "stack"});
+  var errorObj2 = new MockWindowError("this is an excluded error message", "underscore", 55, 66, {stack: "stack"});
 
-  raseError(errorObj, function () {
+  raseError(errorObj1);
+  raseError(errorObj2, function () {
     var errs = errortracker.storageToJSON();
     assert.ok(errs === null);
     QUnit.start();
