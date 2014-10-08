@@ -6,6 +6,8 @@
   	"grunt": "",
   	"grunt-cli": "",
   	"grunt-contrib-requirejs": "",
+    "grunt-contrib-uglify": "",
+    "grunt-contrib-watch": "",
   	"amdclean": ""
   },
   "author": "Persia BME",
