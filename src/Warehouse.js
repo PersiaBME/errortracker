@@ -1,4 +1,4 @@
-﻿define([], function () {
+﻿define(['whenthen'], function (Async) {
 
     // 5 MB is 1048576 bytes
     // each char in javascript is byte so we need 524288 byte
@@ -32,6 +32,17 @@
         }
 
         return pereferdStorageType;
+    }
+
+    function getStorageStatus (passStatus) {
+        Async.when(function (pass) {
+            getSize(pass);
+        }).then(function (results) {
+            if (results.storageContentSize > MAX_STORAGE_SIZE())
+                passStatus('storageStatus', 'full');
+            else
+                passStatus('storageStatus', 'notFull');
+        });
     }
 
     var storageFunctionMap = {
@@ -92,9 +103,9 @@
             toJSON[storage.type]();
     }
 
-    function getSize() {
+    function getSize(pass) {
         return storageFunctionMap.
-            getSize[storage.type]();
+            getSize[storage.type](pass);
     }
 
 
@@ -124,8 +135,8 @@
         return JSON.parse(localStorage.getItem(errortracker.getNamespace()));
     }
 
-    function getLocalStorageSize() {
-        return localStorage.getItem(errortracker.getNamespace()).length;
+    function getLocalStorageSize(pass) {
+        pass('storageContentSize', localStorage.getItem(errortracker.getNamespace()).length);
     }
 
 
@@ -150,7 +161,7 @@
         console.log('IndexedDb: toJSON, not implemented');
     }
 
-    function getIndexedDbSize() {
+    function getIndexedDbSize(pass) {
         console.log('IndexedDb: getSize, not implemented');
     }
 
@@ -176,7 +187,7 @@
         console.log('Cookie: toJSON, not implemented');
     }
 
-    function getCookieSize() {
+    function getCookieSize(pass) {
         console.log('Cookie: getSize, not implemented');
     }
 
@@ -198,6 +209,7 @@
         clear: clear,
         toJSON: toJSON,
         getSize: getSize,
+        getStorageStatus: getStorageStatus,
         initialize: initialize
     }
 

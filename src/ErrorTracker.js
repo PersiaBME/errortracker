@@ -12,6 +12,8 @@
     var debugMode = false;
     //Keeps all errors in a stack structure
     var stack = [];
+    var storageModificationInProgress = false;
+    var storageConteinsUnmanagedItems = false;
     //these propeties are added by user during configuration
     var addedProperties = {};
 
@@ -81,11 +83,38 @@
             stack.push(readyReport);
             Warehouse.save(readyReport);
             printError(reporterType, readyReport);
-            refreshStorage();
+            //refreshStorage();
+            storageConteinsUnmanagedItems = true;
+            manageStorageSize();
             if (typeof report.callback === 'function')
                 callback();
         });
     }
+
+    function manageStorageSize() {
+        if (!storageModificationInProgress && storageConteinsUnmanagedItems) {
+            storageModificationInProgress = true;
+
+            Async.when(function (pass) { 
+                Warehouse.getStorageStatus(pass); 
+            }).then(function (results) {
+                manageStorageStatus(results.storageStatus);
+            });
+        }
+    }
+
+    function manageStorageStatus (status) {
+        if (status === 'full') {
+            console.log('storage full!');
+            storageModificationInProgress = false;
+            storageConteinsUnmanagedItems = false;
+        } else {
+            console.log('storage has empty space.');
+            storageModificationInProgress = false;
+            storageConteinsUnmanagedItems = false;
+        }
+    }
+
 
     function fillErrorProperties (pass) {
         var errorProperties = extend({}, addedProperties, defaultProperties),
@@ -237,13 +266,6 @@
         }
     }
 
-    //Add new properties to error object of a report
-    // function addReportProperties(propObj) {
-    //     for (var prop in propObj) {
-    //         this.properties[prop] = propObj[prop];
-    //     }
-    // }
-
     function resetPropeties() {
         addedProperties = {};
     }
@@ -255,15 +277,6 @@
             reporter.call(console, error);
         }
     }
-
-    //Taking snapshot of DOM
-    // function takeSnapshot (callback) {
-    //     html2canvas(document.body, {
-    //         onrendered: function (snapshot) {
-    //             callback(snapshot);
-    //         }
-    //     });
-    // }
 
     //remove all errors from storage
     function clearStorage() {

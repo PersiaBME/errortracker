@@ -1,4 +1,4 @@
-;(function() {var BrowserDetector, Normalizer, Warehouse, Sender, whenthen, ErrorTracker;
+;(function() {var BrowserDetector, Normalizer, whenthen, Warehouse, Sender, ErrorTracker;
 BrowserDetector = function () {
   /**
   *   Thanks to Aniket Kulkarni from stackoverflow.com
@@ -63,19 +63,19 @@ Normalizer = function (BrowserDetector) {
    * url: https://github.com/stacktracejs/stacktrace.js/
    */
   var browsers = {
-      Chrome: function (stack) {
-        return (stack + '\n').replace(/^[\s\S]+?\s+at\s+/, ' at ').replace(/^\s+(at eval )?at\s+/gm, '').replace(/^([^\(]+?)([\n$])/gm, '{anonymous}() ($1)$2').replace(/^Object.<anonymous>\s*\(([^\)]+)\)/gm, '{anonymous}() ($1)').replace(/^(.+) \((.+)\)$/gm, '$1@$2').split('\n').slice(0, -1);
-      },
-      FirefoxBelow31: function (stack) {
-        return 'Firefox < 31 does not pass stack trace to error event';
-      },
-      FirefoxAbove31: function (stack) {
-        return stack.replace(/(?:\n@:0)?\s+$/m, '').replace(/^(?:\((\S*)\))?@/gm, '{anonymous}($1)@').split('\n');
-      },
-      defaultParser: function (stack) {
-        return stack.replace(/(?:\n@:0)?\s+$/m, '').replace(/^(?:\((\S*)\))?@/gm, '{anonymous}($1)@').split('\n');
-      }
-    };
+    Chrome: function (stack) {
+      return (stack + '\n').replace(/^[\s\S]+?\s+at\s+/, ' at ').replace(/^\s+(at eval )?at\s+/gm, '').replace(/^([^\(]+?)([\n$])/gm, '{anonymous}() ($1)$2').replace(/^Object.<anonymous>\s*\(([^\)]+)\)/gm, '{anonymous}() ($1)').replace(/^(.+) \((.+)\)$/gm, '$1@$2').split('\n').slice(0, -1);
+    },
+    FirefoxBelow31: function (stack) {
+      return 'Firefox < 31 does not pass stack trace to error event';
+    },
+    FirefoxAbove31: function (stack) {
+      return stack.replace(/(?:\n@:0)?\s+$/m, '').replace(/^(?:\((\S*)\))?@/gm, '{anonymous}($1)@').split('\n');
+    },
+    defaultParser: function (stack) {
+      return stack.replace(/(?:\n@:0)?\s+$/m, '').replace(/^(?:\((\S*)\))?@/gm, '{anonymous}($1)@').split('\n');
+    }
+  };
   function normalizeStackTrace(stackTrace) {
     var postFix = '', browserName = BrowserDetector.getBrowser().name;
     if (browserName === 'Firefox') {
@@ -114,218 +114,6 @@ Normalizer = function (BrowserDetector) {
   }
   return { normalizeError: normalizeError };
 }(BrowserDetector);
-Warehouse = function () {
-  // 5 MB is 1048576 bytes
-  // each char in javascript is byte so we need 524288 byte
-  var MAX_STORAGE_SIZE = 500000;
-  var storage = {};
-  function initialize(userConfig) {
-    storage = extend(storage, userConfig);
-    initilizeStorageType();
-  }
-  function initilizeStorageType() {
-    if (!storage.type) {
-      storage.type = detectPereferdAvailableStorage();
-    }
-    MAX_STORAGE_SIZE = storage.maxSize || MAX_STORAGE_SIZE;
-  }
-  function detectPereferdAvailableStorage() {
-    var pereferdStorageType;
-    // preffered storage
-    if ('localStorage' in window && window['localStorage'] !== null) {
-      pereferdStorageType = 'localStorage';
-    } else if (window.indexedDB || window.mozIndexedDB || window.webkitIndexedDB || window.msIndexedDB) {
-      // secondary storage
-      // keep IndexedDB instance
-      pereferdStorageType = 'indexedDb';
-    } else {
-      // fallback storage
-      var pereferdStorageType = 'cookie';
-    }
-    return pereferdStorageType;
-  }
-  var storageFunctionMap = {
-      save: {
-        'localStorage': saveInLocalStorage,
-        'indexedDb': saveInIndexedDb,
-        'cookie': saveInCookie
-      },
-      remove: {
-        'localStorage': removeFromLocalStorage,
-        'indexedDb': removeFromIndexedDb,
-        'cookie': removeFromCookie
-      },
-      update: {
-        'localStorage': updateInLocalStorage,
-        'indexedDb': updateInIndexedDb,
-        'cookie': updateInCookie
-      },
-      clear: {
-        'localStorage': clearLocalStorage,
-        'indexedDb': clearIndexedDb,
-        'cookie': clearCookie
-      },
-      toJSON: {
-        'localStorage': localStorageToJSON,
-        'indexedDb': indexedDbToJSON,
-        'cookie': cookieToJSON
-      },
-      getSize: {
-        'localStorage': getLocalStorageSize,
-        'indexedDb': getIndexedDbSize,
-        'cookie': getCookieSize
-      }
-    };
-  function save(item) {
-    storageFunctionMap.save[storage.type](item);
-  }
-  function remove() {
-    storageFunctionMap.remove[storage.type]();
-  }
-  function update() {
-    storageFunctionMap.update[storage.type]();
-  }
-  function clear() {
-    storageFunctionMap.clear[storage.type]();
-  }
-  function toJSON() {
-    return storageFunctionMap.toJSON[storage.type]();
-  }
-  function getSize() {
-    return storageFunctionMap.getSize[storage.type]();
-  }
-  // localStorage CRUD
-  function saveInLocalStorage(item) {
-    var items = [];
-    if (localStorage.getItem(errortracker.getNamespace()) !== null) {
-      items = JSON.parse(localStorage.getItem(errortracker.getNamespace()));
-    }
-    items.push(item);
-    localStorage.setItem(errortracker.getNamespace(), JSON.stringify(items));
-  }
-  function removeFromLocalStorage(item) {
-    localStorage.removeItem(item);
-  }
-  function updateInLocalStorage() {
-    console.log('localStorage: update, not implemented');
-  }
-  function clearLocalStorage() {
-    localStorage.clear();
-  }
-  function localStorageToJSON() {
-    return JSON.parse(localStorage.getItem(errortracker.getNamespace()));
-  }
-  function getLocalStorageSize() {
-    return localStorage.getItem(errortracker.getNamespace()).length;
-  }
-  // indexedDb CRUD
-  function saveInIndexedDb() {
-    console.log('IndexedDb: save, not implemented');
-  }
-  function removeFromIndexedDb() {
-    console.log('IndexedDb: remove, not implemented');
-  }
-  function updateInIndexedDb() {
-    console.log('IndexedDb: update, not implemented');
-  }
-  function clearIndexedDb() {
-    console.log('IndexedDb: clear, not implemented');
-  }
-  function indexedDbToJSON() {
-    console.log('IndexedDb: toJSON, not implemented');
-  }
-  function getIndexedDbSize() {
-    console.log('IndexedDb: getSize, not implemented');
-  }
-  // cookie CRUD
-  function saveInCookie() {
-    console.log('Cookie: save, not implemented');
-  }
-  function removeFromCookie() {
-    console.log('Cookie: remove, not implemented');
-  }
-  function updateInCookie() {
-    console.log('Cookie: update, not implemented');
-  }
-  function clearCookie() {
-    console.log('Cookie: clear, not implemented');
-  }
-  function cookieToJSON() {
-    console.log('Cookie: toJSON, not implemented');
-  }
-  function getCookieSize() {
-    console.log('Cookie: getSize, not implemented');
-  }
-  //util extend
-  function extend() {
-    for (var i = 1; i < arguments.length; i++)
-      for (var key in arguments[i])
-        if (arguments[i].hasOwnProperty(key))
-          arguments[0][key] = arguments[i][key];
-    return arguments[0];
-  }
-  return {
-    MAX_STORAGE_SIZE: function () {
-      return MAX_STORAGE_SIZE;
-    },
-    save: save,
-    remove: remove,
-    update: update,
-    clear: clear,
-    toJSON: toJSON,
-    getSize: getSize,
-    initialize: initialize
-  };
-}();
-Sender = function () {
-  var XMLHttpFactories = [
-      function () {
-        return new XMLHttpRequest();
-      },
-      function () {
-        return new ActiveXObject('Msxml2.XMLHTTP');
-      },
-      function () {
-        return new ActiveXObject('Msxml3.XMLHTTP');
-      },
-      function () {
-        return new ActiveXObject('Microsoft.XMLHTTP');
-      }
-    ];
-  function createXMLHTTPObject() {
-    var xmlhttp = false;
-    for (var i = 0; i < XMLHttpFactories.length; i++) {
-      try {
-        xmlhttp = XMLHttpFactories[i]();
-      } catch (e) {
-        continue;
-      }
-      break;
-    }
-    return xmlhttp;
-  }
-  function send(url, json, successCallback, failCallback) {
-    var req = createXMLHTTPObject();
-    var method = 'POST';
-    req.open(method, url, true);
-    req.setRequestHeader('Content-type', 'application/json');
-    req.onreadystatechange = function () {
-      if (req.readyState != 4) {
-        failCallback();
-        return;
-      }
-      if (req.status != 200 && req.status != 304) {
-        failCallback();
-        return;
-      }
-      successCallback(req);
-    };
-    if (req.readyState == 4)
-      return;
-    req.send(JSON.stringify(json));
-  }
-  return { send: send };
-}();
 //Thanks to the author of when-then library, https://github.com/geuis/when-then
 //License: MIT License(http://opensource.org/licenses/mit-license.php)
 whenthen = function () {
@@ -364,6 +152,229 @@ whenthen = function () {
   };
   return { when: when };
 }();
+Warehouse = function (Async) {
+  // 5 MB is 1048576 bytes
+  // each char in javascript is byte so we need 524288 byte
+  var MAX_STORAGE_SIZE = 500000;
+  var storage = {};
+  function initialize(userConfig) {
+    storage = extend(storage, userConfig);
+    initilizeStorageType();
+  }
+  function initilizeStorageType() {
+    if (!storage.type) {
+      storage.type = detectPereferdAvailableStorage();
+    }
+    MAX_STORAGE_SIZE = storage.maxSize || MAX_STORAGE_SIZE;
+  }
+  function detectPereferdAvailableStorage() {
+    var pereferdStorageType;
+    // preffered storage
+    if ('localStorage' in window && window['localStorage'] !== null) {
+      pereferdStorageType = 'localStorage';
+    } else if (window.indexedDB || window.mozIndexedDB || window.webkitIndexedDB || window.msIndexedDB) {
+      // secondary storage
+      // keep IndexedDB instance
+      pereferdStorageType = 'indexedDb';
+    } else {
+      // fallback storage
+      var pereferdStorageType = 'cookie';
+    }
+    return pereferdStorageType;
+  }
+  function getStorageStatus(passStatus) {
+    Async.when(function (pass) {
+      getSize(pass);
+    }).then(function (results) {
+      if (results.storageContentSize > MAX_STORAGE_SIZE())
+        passStatus('storageStatus', 'full');
+      else
+        passStatus('storageStatus', 'notFull');
+    });
+  }
+  var storageFunctionMap = {
+    save: {
+      'localStorage': saveInLocalStorage,
+      'indexedDb': saveInIndexedDb,
+      'cookie': saveInCookie
+    },
+    remove: {
+      'localStorage': removeFromLocalStorage,
+      'indexedDb': removeFromIndexedDb,
+      'cookie': removeFromCookie
+    },
+    update: {
+      'localStorage': updateInLocalStorage,
+      'indexedDb': updateInIndexedDb,
+      'cookie': updateInCookie
+    },
+    clear: {
+      'localStorage': clearLocalStorage,
+      'indexedDb': clearIndexedDb,
+      'cookie': clearCookie
+    },
+    toJSON: {
+      'localStorage': localStorageToJSON,
+      'indexedDb': indexedDbToJSON,
+      'cookie': cookieToJSON
+    },
+    getSize: {
+      'localStorage': getLocalStorageSize,
+      'indexedDb': getIndexedDbSize,
+      'cookie': getCookieSize
+    }
+  };
+  function save(item) {
+    storageFunctionMap.save[storage.type](item);
+  }
+  function remove() {
+    storageFunctionMap.remove[storage.type]();
+  }
+  function update() {
+    storageFunctionMap.update[storage.type]();
+  }
+  function clear() {
+    storageFunctionMap.clear[storage.type]();
+  }
+  function toJSON() {
+    return storageFunctionMap.toJSON[storage.type]();
+  }
+  function getSize(pass) {
+    return storageFunctionMap.getSize[storage.type](pass);
+  }
+  // localStorage CRUD
+  function saveInLocalStorage(item) {
+    var items = [];
+    if (localStorage.getItem(errortracker.getNamespace()) !== null) {
+      items = JSON.parse(localStorage.getItem(errortracker.getNamespace()));
+    }
+    items.push(item);
+    localStorage.setItem(errortracker.getNamespace(), JSON.stringify(items));
+  }
+  function removeFromLocalStorage(item) {
+    localStorage.removeItem(item);
+  }
+  function updateInLocalStorage() {
+    console.log('localStorage: update, not implemented');
+  }
+  function clearLocalStorage() {
+    localStorage.clear();
+  }
+  function localStorageToJSON() {
+    return JSON.parse(localStorage.getItem(errortracker.getNamespace()));
+  }
+  function getLocalStorageSize(pass) {
+    pass('storageContentSize', localStorage.getItem(errortracker.getNamespace()).length);
+  }
+  // indexedDb CRUD
+  function saveInIndexedDb() {
+    console.log('IndexedDb: save, not implemented');
+  }
+  function removeFromIndexedDb() {
+    console.log('IndexedDb: remove, not implemented');
+  }
+  function updateInIndexedDb() {
+    console.log('IndexedDb: update, not implemented');
+  }
+  function clearIndexedDb() {
+    console.log('IndexedDb: clear, not implemented');
+  }
+  function indexedDbToJSON() {
+    console.log('IndexedDb: toJSON, not implemented');
+  }
+  function getIndexedDbSize(pass) {
+    console.log('IndexedDb: getSize, not implemented');
+  }
+  // cookie CRUD
+  function saveInCookie() {
+    console.log('Cookie: save, not implemented');
+  }
+  function removeFromCookie() {
+    console.log('Cookie: remove, not implemented');
+  }
+  function updateInCookie() {
+    console.log('Cookie: update, not implemented');
+  }
+  function clearCookie() {
+    console.log('Cookie: clear, not implemented');
+  }
+  function cookieToJSON() {
+    console.log('Cookie: toJSON, not implemented');
+  }
+  function getCookieSize(pass) {
+    console.log('Cookie: getSize, not implemented');
+  }
+  //util extend
+  function extend() {
+    for (var i = 1; i < arguments.length; i++)
+      for (var key in arguments[i])
+        if (arguments[i].hasOwnProperty(key))
+          arguments[0][key] = arguments[i][key];
+    return arguments[0];
+  }
+  return {
+    MAX_STORAGE_SIZE: function () {
+      return MAX_STORAGE_SIZE;
+    },
+    save: save,
+    remove: remove,
+    update: update,
+    clear: clear,
+    toJSON: toJSON,
+    getSize: getSize,
+    getStorageStatus: getStorageStatus,
+    initialize: initialize
+  };
+}(whenthen);
+Sender = function () {
+  var XMLHttpFactories = [
+    function () {
+      return new XMLHttpRequest();
+    },
+    function () {
+      return new ActiveXObject('Msxml2.XMLHTTP');
+    },
+    function () {
+      return new ActiveXObject('Msxml3.XMLHTTP');
+    },
+    function () {
+      return new ActiveXObject('Microsoft.XMLHTTP');
+    }
+  ];
+  function createXMLHTTPObject() {
+    var xmlhttp = false;
+    for (var i = 0; i < XMLHttpFactories.length; i++) {
+      try {
+        xmlhttp = XMLHttpFactories[i]();
+      } catch (e) {
+        continue;
+      }
+      break;
+    }
+    return xmlhttp;
+  }
+  function send(url, json, successCallback, failCallback) {
+    var req = createXMLHTTPObject();
+    var method = 'POST';
+    req.open(method, url, true);
+    req.setRequestHeader('Content-type', 'application/json');
+    req.onreadystatechange = function () {
+      if (req.readyState != 4) {
+        failCallback();
+        return;
+      }
+      if (req.status != 200 && req.status != 304) {
+        failCallback();
+        return;
+      }
+      successCallback(req);
+    };
+    if (req.readyState == 4)
+      return;
+    req.send(JSON.stringify(json));
+  }
+  return { send: send };
+}();
 (function (Normalizer, Warehouse, BrowserDetector, Sender, Async) {
   var options = {};
   var namespace = 'errortracker';
@@ -371,33 +382,35 @@ whenthen = function () {
   var debugMode = false;
   //Keeps all errors in a stack structure
   var stack = [];
+  var storageModificationInProgress = false;
+  var storageConteinsUnmanagedItems = false;
   //these propeties are added by user during configuration
   var addedProperties = {};
   //Keeps errortracker storages
   var storages = {
-      LOCAL_STORAGE: 'localStorage',
-      INDEXED_DB: 'indexedDb',
-      COOKIE: 'cookie'
-    };
+    LOCAL_STORAGE: 'localStorage',
+    INDEXED_DB: 'indexedDb',
+    COOKIE: 'cookie'
+  };
   /**
   * Keep track of different kind of reporters
   * A more abstract layer for console[log/warn/error/info]
   */
   var reporters = {
-      LOG: 'log',
-      WARN: 'warn',
-      FATAL: 'error',
-      INFO: 'info'
-    };
+    LOG: 'log',
+    WARN: 'warn',
+    FATAL: 'error',
+    INFO: 'info'
+  };
   var defaultProperties = {
-      DateTime: function () {
-        return new Date();
-      },
-      Location: function () {
-        return window.location.href;
-      },
-      Agent: navigator.userAgent
-    };
+    DateTime: function () {
+      return new Date();
+    },
+    Location: function () {
+      return window.location.href;
+    },
+    Agent: navigator.userAgent
+  };
   function Report(error, type, callback) {
     this.error = error;
     this.type = type || 'error';
@@ -434,10 +447,33 @@ whenthen = function () {
       stack.push(readyReport);
       Warehouse.save(readyReport);
       printError(reporterType, readyReport);
-      refreshStorage();
+      //refreshStorage();
+      storageConteinsUnmanagedItems = true;
+      manageStorageSize();
       if (typeof report.callback === 'function')
         callback();
     });
+  }
+  function manageStorageSize() {
+    if (!storageModificationInProgress && storageConteinsUnmanagedItems) {
+      storageModificationInProgress = true;
+      Async.when(function (pass) {
+        Warehouse.getStorageStatus(pass);
+      }).then(function (results) {
+        manageStorageStatus(results.storageStatus);
+      });
+    }
+  }
+  function manageStorageStatus(status) {
+    if (status === 'full') {
+      console.log('storage full!');
+      storageModificationInProgress = false;
+      storageConteinsUnmanagedItems = false;
+    } else {
+      console.log('storage has empty space.');
+      storageModificationInProgress = false;
+      storageConteinsUnmanagedItems = false;
+    }
   }
   function fillErrorProperties(pass) {
     var errorProperties = extend({}, addedProperties, defaultProperties), fieldProperties = {}, asyncFunctions = [], i, p;
@@ -559,12 +595,6 @@ whenthen = function () {
       addedProperties[prop] = propObj[prop];
     }
   }
-  //Add new properties to error object of a report
-  // function addReportProperties(propObj) {
-  //     for (var prop in propObj) {
-  //         this.properties[prop] = propObj[prop];
-  //     }
-  // }
   function resetPropeties() {
     addedProperties = {};
   }
@@ -575,14 +605,6 @@ whenthen = function () {
       reporter.call(console, error);
     }
   }
-  //Taking snapshot of DOM
-  // function takeSnapshot (callback) {
-  //     html2canvas(document.body, {
-  //         onrendered: function (snapshot) {
-  //             callback(snapshot);
-  //         }
-  //     });
-  // }
   //remove all errors from storage
   function clearStorage() {
     Warehouse.clear();
