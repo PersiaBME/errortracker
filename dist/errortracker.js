@@ -469,7 +469,7 @@ Sender = function () {
   function manageStorageStatus(status) {
     if (status === 'full') {
       if (!storageModificationInProgress && storageConteinsUnmanagedItems) {
-        console.log('storage full!');
+        log('storage full!');
         storageModificationInProgress = true;
         Async.when(makeTempStorage).then(function () {
           var tempReports = Warehouse.toJSON(getNamespace() + '_temp');
@@ -477,13 +477,13 @@ Sender = function () {
             storageModificationInProgress = false;
             manageStorageSize();
           }, function () {
-            console.log('failed to push temp storage to the server');
+            log('failed to push temp storage to the server');
           });
         });
       }
-      console.log('storage busy...');
+      log('storage busy...');
     } else {
-      console.log('storage has empty space.');
+      log('storage has empty space.');
       storageModificationInProgress = false;
       storageConteinsUnmanagedItems = false;
     }
@@ -562,9 +562,9 @@ Sender = function () {
         if (!validationObject.hasOwnProperty(property) || property.slice(0, 1) === '_')
           continue;
         var expression = new RegExp(validationObject[property]);
-        partialResults.push(expression.test(errorObject[property]));  //console.log(validationObject[property], '-> ', errorObject[property]);
+        partialResults.push(expression.test(errorObject[property]));  //log(validationObject[property], '-> ', errorObject[property]);
       }
-      //console.log(partialResults);
+      //log(partialResults);
       for (var i = 0; i < partialResults.length; i++) {
         if (validationObject._consider === 'any')
           finalResults = finalResults || partialResults[i];
@@ -641,7 +641,7 @@ Sender = function () {
   //prints out a string version of stack into console
   function printStack() {
     stack.forEach(function (error) {
-      console.log(error);
+      log(error);
     });
   }
   //return namespace
@@ -661,6 +661,10 @@ Sender = function () {
         if (arguments[i].hasOwnProperty(key))
           arguments[0][key] = arguments[i][key];
     return arguments[0];
+  }
+  function log() {
+    if (options.enableLogging)
+      console.log.apply(console, arguments);
   }
   //Our global object act as ErrorTracker
   window.errortracker = {

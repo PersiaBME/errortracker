@@ -1,6 +1,6 @@
 ﻿{
   "name": "",
-  "version": "2.0.3a",
+  "version": "2.0.4",
   "description": "A Javascript error handeling and reporting library",
   "devDependencies": {
   	"grunt": "",
