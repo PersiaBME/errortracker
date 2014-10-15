@@ -186,7 +186,7 @@ Warehouse = function (Async) {
     Async.when(function (pass) {
       getSize(pass);
     }).then(function (results) {
-      if (results.storageContentSize > MAX_STORAGE_SIZE())
+      if (results.storageContentSize > MAX_STORAGE_SIZE)
         passStatus('storageStatus', 'full');
       else
         passStatus('storageStatus', 'notFull');
@@ -224,8 +224,8 @@ Warehouse = function (Async) {
       'cookie': getCookieSize
     }
   };
-  function save(item) {
-    storageFunctionMap.save[storage.type](item);
+  function save(item, namespacePostfix) {
+    storageFunctionMap.save[storage.type](item, namespacePostfix);
   }
   function remove() {
     storageFunctionMap.remove[storage.type]();
@@ -236,20 +236,24 @@ Warehouse = function (Async) {
   function clear() {
     storageFunctionMap.clear[storage.type]();
   }
-  function toJSON() {
-    return storageFunctionMap.toJSON[storage.type]();
+  function toJSON(storageName) {
+    return storageFunctionMap.toJSON[storage.type](storageName);
   }
   function getSize(pass) {
     return storageFunctionMap.getSize[storage.type](pass);
   }
   // localStorage CRUD
-  function saveInLocalStorage(item) {
+  function saveInLocalStorage(content, namespacePostfix) {
     var items = [];
-    if (localStorage.getItem(errortracker.getNamespace()) !== null) {
+    namespacePostfix = namespacePostfix || '';
+    if (localStorage.getItem(errortracker.getNamespace()) !== null)
       items = JSON.parse(localStorage.getItem(errortracker.getNamespace()));
-    }
-    items.push(item);
-    localStorage.setItem(errortracker.getNamespace(), JSON.stringify(items));
+    if (content instanceof Array)
+      for (var i = 0; i < content.length; i++)
+        items.push(content[i]);
+    else
+      items.push(content);
+    localStorage.setItem(errortracker.getNamespace() + namespacePostfix, JSON.stringify(items));
   }
   function removeFromLocalStorage(item) {
     localStorage.removeItem(item);
@@ -260,11 +264,13 @@ Warehouse = function (Async) {
   function clearLocalStorage() {
     localStorage.clear();
   }
-  function localStorageToJSON() {
-    return JSON.parse(localStorage.getItem(errortracker.getNamespace()));
+  function localStorageToJSON(storageName) {
+    storageName = storageName || errortracker.getNamespace();
+    return JSON.parse(localStorage.getItem(storageName));
   }
   function getLocalStorageSize(pass) {
-    pass('storageContentSize', localStorage.getItem(errortracker.getNamespace()).length);
+    var content = localStorage.getItem(errortracker.getNamespace()) || '';
+    pass('storageContentSize', content.length || 0);
   }
   // indexedDb CRUD
   function saveInIndexedDb() {
@@ -447,7 +453,6 @@ Sender = function () {
       stack.push(readyReport);
       Warehouse.save(readyReport);
       printError(reporterType, readyReport);
-      //refreshStorage();
       storageConteinsUnmanagedItems = true;
       manageStorageSize();
       if (typeof report.callback === 'function')
@@ -455,25 +460,42 @@ Sender = function () {
     });
   }
   function manageStorageSize() {
-    if (!storageModificationInProgress && storageConteinsUnmanagedItems) {
-      storageModificationInProgress = true;
-      Async.when(function (pass) {
-        Warehouse.getStorageStatus(pass);
-      }).then(function (results) {
-        manageStorageStatus(results.storageStatus);
-      });
-    }
+    Async.when(function (pass) {
+      Warehouse.getStorageStatus(pass);
+    }).then(function (results) {
+      manageStorageStatus(results.storageStatus);
+    });
   }
   function manageStorageStatus(status) {
     if (status === 'full') {
-      console.log('storage full!');
-      storageModificationInProgress = false;
-      storageConteinsUnmanagedItems = false;
+      if (!storageModificationInProgress && storageConteinsUnmanagedItems) {
+        console.log('storage full!');
+        storageModificationInProgress = true;
+        Async.when(makeTempStorage).then(function () {
+          var tempReports = Warehouse.toJSON(getNamespace() + '_temp');
+          Sender.send(options.addToServerDbUrl, tempReports, function () {
+            storageModificationInProgress = false;
+            manageStorageSize();
+          }, function () {
+            console.log('failed to push temp storage to the server');
+          });
+        });
+      }
+      console.log('storage busy...');
     } else {
       console.log('storage has empty space.');
       storageModificationInProgress = false;
       storageConteinsUnmanagedItems = false;
     }
+  }
+  function makeTempStorage(pass) {
+    //must be converted to when then structure
+    var storageContetn = Warehouse.toJSON();
+    clearStorage();
+    storageConteinsUnmanagedItems = false;
+    //make sure you have storage content at this point
+    Warehouse.save(storageContetn, '_temp');
+    pass();
   }
   function fillErrorProperties(pass) {
     var errorProperties = extend({}, addedProperties, defaultProperties), fieldProperties = {}, asyncFunctions = [], i, p;

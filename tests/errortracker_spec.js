@@ -12,7 +12,7 @@ pending = QUnit.pending;
 function setup() {
   errortracker.initialize({
       storage: {
-          maxSize: 1000,
+          maxSize: 100000,
           type: "localStorage"
       },
       addToServerDbUrl: "/api/to/add/errorReports"

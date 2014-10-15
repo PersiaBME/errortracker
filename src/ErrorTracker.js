@@ -83,7 +83,6 @@
             stack.push(readyReport);
             Warehouse.save(readyReport);
             printError(reporterType, readyReport);
-            //refreshStorage();
             storageConteinsUnmanagedItems = true;
             manageStorageSize();
             if (typeof report.callback === 'function')
@@ -92,22 +91,31 @@
     }
 
     function manageStorageSize() {
-        if (!storageModificationInProgress && storageConteinsUnmanagedItems) {
-            storageModificationInProgress = true;
-
-            Async.when(function (pass) { 
-                Warehouse.getStorageStatus(pass); 
-            }).then(function (results) {
-                manageStorageStatus(results.storageStatus);
-            });
-        }
+        Async.when(function (pass) { 
+            Warehouse.getStorageStatus(pass); 
+        }).then(function (results) {
+            manageStorageStatus(results.storageStatus);
+        });
     }
 
     function manageStorageStatus (status) {
         if (status === 'full') {
-            console.log('storage full!');
-            storageModificationInProgress = false;
-            storageConteinsUnmanagedItems = false;
+            if (!storageModificationInProgress && storageConteinsUnmanagedItems) {
+                console.log('storage full!');
+                storageModificationInProgress = true;
+                Async.when(makeTempStorage).
+                then(function () {
+                    var tempReports = Warehouse.toJSON(getNamespace() + '_temp');
+                    Sender.send(options.addToServerDbUrl, tempReports, function () {
+                        storageModificationInProgress = false;
+                        manageStorageSize();
+                    },
+                    function () {
+                        console.log('failed to push temp storage to the server');
+                    });
+                })
+            }
+            console.log('storage busy...');
         } else {
             console.log('storage has empty space.');
             storageModificationInProgress = false;
@@ -115,6 +123,16 @@
         }
     }
 
+    function makeTempStorage(pass) {
+        //must be converted to when then structure
+        var storageContetn = Warehouse.toJSON();
+        clearStorage();
+        
+        storageConteinsUnmanagedItems = false;
+        //make sure you have storage content at this point
+        Warehouse.save(storageContetn, '_temp');
+        pass();
+    }
 
     function fillErrorProperties (pass) {
         var errorProperties = extend({}, addedProperties, defaultProperties),

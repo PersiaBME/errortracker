@@ -38,7 +38,7 @@
         Async.when(function (pass) {
             getSize(pass);
         }).then(function (results) {
-            if (results.storageContentSize > MAX_STORAGE_SIZE())
+            if (results.storageContentSize > MAX_STORAGE_SIZE)
                 passStatus('storageStatus', 'full');
             else
                 passStatus('storageStatus', 'notFull');
@@ -78,9 +78,9 @@
         }
     }
 
-    function save( item ) {
+    function save( item, namespacePostfix) {
         storageFunctionMap.
-                save[storage.type](item);
+                save[storage.type](item, namespacePostfix);
     }
 
     function remove() {
@@ -98,9 +98,9 @@
             clear[storage.type]();
     }
 
-    function toJSON() {
+    function toJSON(storageName) {
         return storageFunctionMap.
-            toJSON[storage.type]();
+            toJSON[storage.type](storageName);
     }
 
     function getSize(pass) {
@@ -110,13 +110,20 @@
 
 
     // localStorage CRUD
-    function saveInLocalStorage(item) {
+    function saveInLocalStorage(content, namespacePostfix) {
         var items = [];
-        if (localStorage.getItem(errortracker.getNamespace()) !== null) {
-            items = JSON.parse(localStorage.getItem(errortracker.getNamespace()));
-        }
-        items.push(item);
-        localStorage.setItem(errortracker.getNamespace(), JSON.stringify(items));
+        namespacePostfix = namespacePostfix || "";
+
+        if (localStorage.getItem(errortracker.getNamespace()) !== null) 
+            items = JSON.parse(localStorage.getItem(errortracker.getNamespace()));        
+        
+        if (content instanceof Array)
+            for (var i = 0; i < content.length; i++)
+                items.push(content[i]);
+        else
+            items.push(content);
+
+        localStorage.setItem(errortracker.getNamespace() + namespacePostfix, JSON.stringify(items));
     }
 
     function removeFromLocalStorage(item) {
@@ -131,12 +138,14 @@
         localStorage.clear();
     }
 
-    function localStorageToJSON() {
-        return JSON.parse(localStorage.getItem(errortracker.getNamespace()));
+    function localStorageToJSON(storageName) {
+        storageName = storageName || errortracker.getNamespace();
+        return JSON.parse(localStorage.getItem(storageName));
     }
 
     function getLocalStorageSize(pass) {
-        pass('storageContentSize', localStorage.getItem(errortracker.getNamespace()).length);
+        var content = localStorage.getItem(errortracker.getNamespace()) || '';
+        pass('storageContentSize', content.length || 0);
     }
 
 
